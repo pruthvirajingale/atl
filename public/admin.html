@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Attendance Dashboard</title>
+  <style>
+   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      padding: 32px 20px;
+      background: linear-gradient(135deg, #f5f7fb, #eef2ff);
+      color: #111827;
+      min-height: 100vh;
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    /* ================= TABS ================= */
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .tabs button {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+      cursor: pointer;
+      background: #ffffff;
+      color: #374151;
+      transition: all .2s ease;
+      font-weight: 500;
+    }
+
+    .tabs button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .tabs button.active {
+      background: #111827;
+      color: #fff;
+      border-color: #111827;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+
+    /* ================= CONTROLS ================= */
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.7);
+      padding: 16px;
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid #e5e7eb;
+    }
+
+    select, button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    select {
+      background: #fff;
+      min-width: 170px;
+    }
+
+    button {
+      background: #111827;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+
+    button:hover {
+      background: #000;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    /* ================= STATUS ================= */
+
+    .loading {
+      padding: 20px;
+      text-align: center;
+      font-style: italic;
+      color: #6b7280;
+    }
+
+    /* ================= TABLE ================= */
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      z-index: 2;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    /* ================= BADGES ================= */
+
+    .low {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .good {
+      color: #059669;
+      font-weight: 600;
+    }
+
+    /* ================= RESPONSIVE ================= */
+
+    @media (max-width: 640px) {
+      h2 { font-size: 22px; }
+      .controls { padding: 12px; }
+      select { min-width: 140px; }
+    }
+  </style>
+</head>
+
+<body>
+<h2>Attendance Dashboard</h2>
+
+<!-- Tabs for Divisions -->
+<div class="tabs">
+  <button id="tabA" class="active" onclick="switchTab('A')">Co-A (1-63)</button>
+  <button id="tabB" onclick="switchTab('B')">Co-B (64-126)</button>
+</div>
+
+<div class="controls">
+  <select id="subjectSelect">
+    <option value="NIS">NIS (TH + PR)</option>
+    <option value="NIS_TH">NIS - Theory</option>
+    <option value="NIS_PR">NIS - Practical</option>
+
+    <option value="SFT">SFT (TH + PR)</option>
+    <option value="SFT_TH">SFT - Theory</option>
+    <option value="SFT_PR">SFT - Practical</option>
+
+    <option value="CSS">CSS (TH + PR)</option>
+    <option value="CSS_TH">CSS - Theory</option>
+    <option value="CSS_PR">CSS - Practical</option>
+
+    <option value="MAD">MAD (TH + PR)</option>
+    <option value="MAD_TH">MAD - Theory</option>
+    <option value="MAD_PR">MAD - Practical</option>
+
+    <option value="MAN">MAN</option>
+    <option value="ETI">ETI</option>
+  </select>
+
+  <select id="rangeSelect">
+    <option value="week">Last 1 Week</option>
+    <option value="2weeks">Last 2 Weeks</option>
+    <option value="month">Last 1 Month</option>
+  </select>
+
+  <select id="divisionSelect">
+  <option value="A">Co-A (1-63)</option>
+  <option value="B">Co-B (64-126)</option>
+</select>
+
+
+  <button onclick="loadAttendance()">Search</button>
+  <button onclick="exportExcel()">Export Excel</button>
+  <button onclick="toggleEdit()">Edit Mode</button>
+</div>
+
+<div id="statusMessage"></div>
+
+<div class="table-wrapper">
+  <table>
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script>
+let editMode = false;
+let activeTab = 'A'; // Default Co-A
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tabA').classList.toggle('active', tab === 'A');
+  document.getElementById('tabB').classList.toggle('active', tab === 'B');
+  loadAttendance();
+}
+
+function toggleEdit() {
+  editMode = !editMode;
+  statusMessage.innerHTML = editMode
+    ? "<div class='loading'>Edit mode ON – click cells to toggle</div>"
+    : "";
+}
+
+function formatDate(d) {
+  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [y,mo,da] = d.split("-");
+  return `${da} ${m[+mo-1]} ${y.slice(2)}`;
+}
+
+async function loadAttendance() {
+  const subject = subjectSelect.value;
+  const range = rangeSelect.value;
+
+  tableHead.innerHTML = "";
+  tableBody.innerHTML = `<tr><td colspan="100" class="loading">Loading...</td></tr>`;
+
+  // Fetch data
+  const res = await fetch(`/admin/attendance?subject=${subject}&range=${range}`);
+  let data = await res.json();
+
+  // Filter by division
+  if (activeTab === 'A') data = data.filter(d => +d.roll >= 1 && +d.roll <= 63);
+  else data = data.filter(d => +d.roll >= 64 && +d.roll <= 126);
+
+  if (!data.length) {
+    tableBody.innerHTML = `<tr><td colspan="100">No records</td></tr>`;
+    return;
+  }
+
+  // Lecture keys
+  const lectureKeys = [...new Set(
+    data.map(d => `${d.date}_${d.subject.endsWith("_TH") ? "TH" :
+                            d.subject.endsWith("_PR") ? "PR" : ""}`)
+  )].sort();
+
+  // Table header
+  let head = "<tr><th>Roll</th><th>Name</th>";
+  lectureKeys.forEach(k => {
+    const [date, type] = k.split("_");
+    head += `<th>${formatDate(date)}${type ? " ("+type+")" : ""}</th>`;
+  });
+  head += "<th>Attendance %</th></tr>";
+  tableHead.innerHTML = head;
+
+  // Map students
+  const students = {};
+  data.forEach(r => {
+    students[r.roll] ??= { roll: r.roll, name: r.name, att: {} };
+    const key = `${r.date}_${r.subject.endsWith("_TH") ? "TH" :
+                          r.subject.endsWith("_PR") ? "PR" : ""}`;
+    students[r.roll].att[key] = true;
+  });
+
+  // Table body
+  tableBody.innerHTML = "";
+  Object.values(students).forEach(s => {
+    let attended = 0;
+    lectureKeys.forEach(k => { if (s.att[k]) attended++; });
+
+    let total = lectureKeys.length;
+    let percent = total === 0 ? "No Lectures" : ((attended / total) * 100).toFixed(1);
+    let percentDisplay = total === 0 ? "No Lectures" : percent + "%";
+    let percentClass = percent < 75 ? "low" : "good";
+
+    let row = `<tr><td>${s.roll}</td><td>${s.name}</td>`;
+    lectureKeys.forEach(k => {
+      const present = s.att[k];
+      const [date, type] = k.split("_");
+      const finalSubject = type ? `${subject.split("_")[0]}_${type}` : subject;
+      row += `<td style="cursor:${editMode ? "pointer" : "default"}"
+                  onclick="editMode && toggleAttendance('${s.roll}','${s.name}','${finalSubject}','${date}',this)">
+                ${present ? "Present" : "Absent"}
+              </td>`;
+    });
+    row += `<td class="${percentClass}"><b>${percentDisplay}</b></td></tr>`;
+    tableBody.innerHTML += row;
+  });
+}
+
+async function toggleAttendance(roll, name, subject, date, cell) {
+  const newStatus = cell.innerText === "Present" ? "Absent" : "Present";
+  cell.innerText = newStatus;
+
+  await fetch("/admin/attendance", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ roll, name, subject, date, status: newStatus })
+  });
+
+  loadAttendance();
+}
+
+function exportExcel() {
+  const subject = subjectSelect.value;
+  const range = rangeSelect.value;
+  const division = divisionSelect.value; // <-- new
+
+  let url = "";
+  if (subject.endsWith("_TH") || subject.endsWith("_PR")) {
+    url = `/export-excel/${subject}?range=${range}&division=${division}`;
+  } else {
+    url = `/export-excel/${subject}?range=${range}&division=${division}`;
+  }
+
+  window.location.href = url;
+}
+
+</script>
+</body>
+</html>

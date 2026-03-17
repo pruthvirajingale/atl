@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Attendance Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0a0a0a;
+      padding: 16px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .card {
+      width: 100%;
+      max-width: 100%;
+      background: #ffffff;
+      padding: 24px 20px;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+    h2 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+    button, input, select {
+      width: 100%;
+      padding: 16px;
+      margin-top: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #ffffff;
+      color: #1a1a1a;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    input { cursor: text; }
+    input::placeholder { color: #9ca3af; }
+    input:focus { border-color: #1a1a1a; background: #fafafa; }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231a1a1a' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 48px;
+    }
+    select:focus { border-color: #1a1a1a; background-color: #fafafa; }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      background: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #1a1a1a;
+      margin-top: 20px;
+      min-height: 50px;
+      touch-action: manipulation;
+    }
+    button:active { transform: scale(0.97); background: #2d2d2d; }
+    #reader {
+      margin-top: 20px;
+      border: 2px dashed #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      background: #fafafa;
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6a6a6a;
+      font-size: 15px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .success {
+      color: #16a34a;
+      font-weight: 600;
+      margin-top: 16px;
+      padding: 16px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      border: 1px solid #86efac;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .error {
+      color: #dc2626;
+      font-weight: 600;
+      margin-top: 16px;
+      padding: 16px;
+      background: #fef2f2;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .small {
+      font-size: 14px;
+      color: #6a6a6a;
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.6;
+      padding: 0 8px;
+    }
+    @supports (-webkit-touch-callout: none) {
+      input, select, button { font-size: 16px; }
+    }
+    @media (max-width: 360px) {
+      .card { padding: 20px 16px; }
+      h2 { font-size: 20px; }
+      button, input, select { padding: 14px; font-size: 15px; }
+      #reader { min-height: 200px; }
+    }
+    @media (max-height: 600px) and (orientation: landscape) {
+      body { padding: 12px; }
+      .card { padding: 16px; }
+      h2 { margin-bottom: 16px; font-size: 20px; }
+      #reader { min-height: 160px; }
+      button, input, select { margin-top: 8px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="card">
+  <h2>QR Attendance Scanner</h2>
+
+  <p class="small" id="studentInfo"></p>
+
+  <div id="studentBox" style="display:none;">
+    <input type="text" id="roll" placeholder="Enter Roll Number" />
+    <input type="text" id="name" placeholder="Enter Student Name" />
+    <button onclick="saveStudent()">Save Details</button>
+  </div>
+
+  <button onclick="startScanner()">Start Camera Scanner</button>
+  <div id="reader">Scanner will appear here...</div>
+  <p id="status"></p>
+
+  <hr />
+  <select id="subject">
+  <option value="">-- Select Subject --</option>
+
+  <option value="NIS_TH">NIS - Theory</option>
+  <option value="NIS_PR">NIS - Practical</option>
+
+  <option value="SFT_TH">SFT - Theory</option>
+  <option value="SFT_PR">SFT - Practical</option>
+
+  <option value="MAN">MAN</option>
+  <option value="ETI">ETI</option>
+
+  <option value="CSS_TH">CSS - Theory</option>
+  <option value="CSS_PR">CSS - Practical</option>
+
+  <option value="MAD_TH">MAD - Theory</option>
+  <option value="MAD_PR">MAD - Practical</option>
+</select>
+
+</div>
+
+<script> 
+ const API_BASE = "https://atl-886c.onrender.com";
+
+  const TOKEN_PREFIX = "COLLEGE_QR_";
+  const TOKEN_INTERVAL = 30;
+
+  function expectedToken() {
+    return TOKEN_PREFIX + Math.floor(Date.now() / 1000 / TOKEN_INTERVAL);
+  }
+
+  let html5QrCode;
+  let scanning = false;
+
+  function loadStudent() {
+    const roll = localStorage.getItem("roll");
+    const name = localStorage.getItem("name");
+
+    if (roll && name) {
+      document.getElementById("studentInfo").innerText =
+        `Roll No: ${roll} | Name: ${name}`;
+      document.getElementById("studentBox").style.display = "none";
+    } else {
+      document.getElementById("studentBox").style.display = "block";
+    }
+  }
+
+  function saveStudent() {
+    const roll = document.getElementById("roll").value.trim();
+    const name = document.getElementById("name").value.trim();
+
+    if (!roll || !name) {
+      alert("Enter roll number and name");
+      return;
+    }
+
+    localStorage.setItem("roll", roll);
+    localStorage.setItem("name", name);
+    loadStudent();
+  }
+
+  function startScanner() {
+    const roll = localStorage.getItem("roll");
+    const name = localStorage.getItem("name");
+
+    if (!roll || !name) {
+      alert("Please save student details first");
+      return;
+    }
+
+    if (scanning) return;
+
+    document.getElementById("reader").innerHTML = "";
+    document.getElementById("status").innerText = "Opening camera...";
+
+    html5QrCode = new Html5Qrcode("reader");
+    scanning = true;
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess
+    ).catch((err) => {
+      scanning = false;
+      document.getElementById("status").innerHTML =
+        "<span class='error'>Camera permission denied or not available</span>";
+    });
+  }
+
+  function onScanSuccess(text) {
+    if (text === expectedToken()) {
+      document.getElementById("status").innerHTML =
+        "<span class='success'>QR verified. Marking attendance...</span>";
+
+      html5QrCode.stop().then(() => {
+        scanning = false;
+        markAttendance();
+      });
+    } else {
+      document.getElementById("status").innerHTML =
+        "<span class='error'>Invalid or expired QR</span>";
+    }
+  }
+
+  async function markAttendance() {
+    const roll = localStorage.getItem("roll");
+    const name = localStorage.getItem("name");
+    const subject = document.getElementById("subject").value;
+
+    if (!subject) {
+      document.getElementById("status").innerHTML =
+        "<span class='error'>Select subject</span>";
+      return;
+    }
+
+    try {
+      const res = await fetch(API_BASE + "/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roll, name, subject })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("status").innerHTML =
+          `<span class='error'>${data.error}</span>`;
+        return;
+      }
+
+      document.getElementById("status").innerHTML =
+        "<span class='success'>Attendance recorded successfully</span>";
+    } catch {
+      document.getElementById("status").innerHTML =
+        "<span class='error'>Server not reachable</span>";
+    }
+  }
+
+  loadStudent();
+</script>
+</body>
+</html>
