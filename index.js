@@ -93,7 +93,7 @@ app.get("/admin/attendance", async (req, res) => {
       if (subject.endsWith("_TH") || subject.endsWith("_PR")) {
         filter.subject = subject;
       } else {
-        filter.subject = { $regex: `^${subject}_(TH|PR)$` };
+        filter.subject = { $in: [`${subject}_TH`, `${subject}_PR`] };
       }
     }
 
@@ -156,7 +156,7 @@ app.get("/export-excel/:subject", async (req, res) => {
       records = await Attendance.find({ subject }).lean();
     } else {
       // Combined TH+PR
-      records = await Attendance.find({ subject: { $regex: `^${subject}_(TH|PR)$` } }).lean();
+      records = await Attendance.find({ subject: { $in: [`${subject}_TH`, `${subject}_PR`] } }).lean();
     }
 
     if (!records.length) return res.status(404).send("No data");
@@ -233,7 +233,7 @@ app.get("/export-combined/:subject", async (req, res) => {
 
     // Get records for this subject + date range
     const records = await Attendance.find({
-      subject: { $regex: `^${base}_(TH|PR)$` },
+      subject: { $in: [`${base}_TH`, `${base}_PR`] },
       date: { $gte: from, $lte: to }
     }).lean();
 
