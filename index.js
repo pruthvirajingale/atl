@@ -203,42 +203,100 @@ app.patch("/departments/:id", auth("admin"), async (req, res) => {
   res.json(dept);
 });
 
-app.get("/admin/attendance", async (req, res) => {
-  try {
-    const { subject, range } = req.query;
-    let filter = {};
-
-    // Filter by subject
-    if (subject) {
-      if (subject.endsWith("_TH") || subject.endsWith("_PR")) {
-        filter.subject = subject;
-      } else {
-        filter.subject = { $regex: `^${subject}_(TH|PR)$` };
-      }
-    }
-
-    // Calculate date range relative to today
-    const today = new Date();
-    let start = new Date();
-
-    if (range === "week") start.setDate(today.getDate() - 6);      // last 7 days
-    else if (range === "2weeks") start.setDate(today.getDate() - 13); // last 14 days
-    else if (range === "month") start.setMonth(today.getMonth() - 1); // last month
-
-    const from = start.toISOString().split("T")[0];
-    const to = today.toISOString().split("T")[0];
-
-    filter.date = { $gte: from, $lte: to }; // filter between from and to
-
-    const data = await Attendance.find(filter).sort({ date: 1 }).lean();
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to load attendance" });
-  }
+app.delete("/departments/:id", auth("admin"), async (req, res) => {
+  await Department.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted." });
 });
 
-app.patch("/admin/attendance", async (req, res) => {
+/* ── Subjects (hod / admin) ── */
+
+app.get("/subjects", auth(), async (req, res) => {
+  const f = {};
+  // Scope by role
+  if (req.user.role === "hod") f.departmentId = req.user.departmentId;
+  else if (req.user.role === "subject_teacher")
+    f._id = { $in: (req.user.assignedSubjects || []).map(a => a.subjectId) };
+  else if (req.query.departmentId) f.departmentId = req.query.departmentId;
+  // Safe filters — only apply known fields
+  if (req.query.year)       f.year       = +req.query.year;
+  if (req.query.semester)   f.semester   = +req.query.semester;
+  if (req.query.divisionId) f.divisionId = req.query.divisionId;
+  if (req.query.teacherId)  f.teacherId  = req.query.teacherId;
+  const subjects = await Subject.find(f).populate("teacherId", "name email").lean();
+  res.json(subjects);
+});
+
+app.post("/subjects", auth("admin", "hod"), async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (req.user.role === "hod") data.departmentId = req.user.departmentId;
+    const subject = await Subject.create(data);
+    if (data.teacherId) {
+      await User.findByIdAndUpdate(data.teacherId, {
+        $addToSet: { assignedSubjects: { subjectId: subject._id, divisionId: data.divisionId } }
+      });
+    }
+    res.json(subject);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.patch("/subjects/:id", auth("admin", "hod"), async (req, res) => {
+  try {
+    const old = await Subject.findById(req.params.id);
+    // Swap teacher assignment if changed
+    if (req.body.teacherId !== undefined && old.teacherId?.toString() !== req.body.teacherId) {
+      if (old.teacherId)
+        await User.findByIdAndUpdate(old.teacherId, { $pull: { assignedSubjects: { subjectId: old._id } } });
+      if (req.body.teacherId)
+        await User.findByIdAndUpdate(req.body.teacherId, {
+          $addToSet: { assignedSubjects: { subjectId: old._id, divisionId: req.body.divisionId || old.divisionId } }
+        });
+    }
+    const subject = await Subject.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(subject);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/subjects/:id", auth("admin", "hod"), async (req, res) => {
+  const s = await Subject.findByIdAndDelete(req.params.id);
+  if (s?.teacherId)
+    await User.findByIdAndUpdate(s.teacherId, { $pull: { assignedSubjects: { subjectId: s._id } } });
+  res.json({ message: "Deleted." });
+});
+
+/* ── Attendance ── */
+
+// Bulk mark (present/absent for whole class in one call)
+app.post("/attendance/bulk", auth("admin", "hod", "subject_teacher"), async (req, res) => {
+  try {
+    const { subjectId, divisionId, date, records } = req.body;
+    const subject = await Subject.findById(subjectId).lean();
+    if (!subject) return res.status(404).json({ error: "Subject not found." });
+
+    const today = date || new Date().toISOString().split("T")[0];
+    const present = records.filter(r => r.present);
+    const absentRolls = records.filter(r => !r.present).map(r => r.studentRoll);
+
+    if (absentRolls.length)
+      await Attendance.deleteMany({ studentRoll: { $in: absentRolls }, subjectId, date: today });
+
+    if (present.length) {
+      await Attendance.bulkWrite(present.map(r => ({
+        updateOne: {
+          filter: { studentRoll: r.studentRoll, subjectId, date: today },
+          update: { $set: { studentName: r.studentName, divisionId, departmentId: subject.departmentId,
+                            year: subject.year, semester: subject.semester, markedBy: req.user.id } },
+          upsert: true
+        }
+      })));
+    }
+
+    res.json({ message: `${present.length} present, ${absentRolls.length} absent.` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get attendance (scoped by role)
+app.get("/attendance", auth(), async (req, res) => {
   try {
     const { subjectId, divisionId, year, semester, departmentId, range, date, from, to } = req.query;
     const f = {};
@@ -287,96 +345,18 @@ app.patch("/attendance", auth("admin", "hod", "subject_teacher"), async (req, re
 
 app.get("/export/:subjectId", auth(), async (req, res) => {
   try {
-    const subject = req.params.subject;
-    const division = req.query.division || "A"; // default Co-A if not specified
+    const subject = await Subject.findById(req.params.subjectId)
+      .populate("departmentId", "name code years").lean();
+    if (!subject) return res.status(404).json({ error: "Subject not found." });
 
-    // Fetch all records for this subject
-    let records;
-    if (subject.endsWith("_TH") || subject.endsWith("_PR")) {
-      // Single TH or PR
-      records = await Attendance.find({ subject }).lean();
-    } else {
-      // Combined TH+PR
-      records = await Attendance.find({ subject: { $regex: `^${subject}_(TH|PR)$` } }).lean();
-    }
+    const { range, from, to } = req.query;
+    const dateF = range ? (() => { const r = getDateRange(range); return { $gte: r.from, $lte: r.to }; })()
+                : (from || to) ? { ...(from && { $gte: from }), ...(to && { $lte: to }) } : null;
 
-    if (!records.length) return res.status(404).send("No data");
-
-    // Filter by division roll ranges
-    if (division === "A") records = records.filter(r => +r.roll >= 1 && +r.roll <= 63);
-    if (division === "B") records = records.filter(r => +r.roll >= 64 && +r.roll <= 126);
-
-    // Create unique lecture dates (or date+type for combined)
-    const lectureKeys = [...new Set(
-      records.map(r => r.subject.endsWith("_TH") || r.subject.endsWith("_PR")
-        ? `${r.date}_${r.subject.endsWith("_TH") ? "TH" : "PR"}`
-        : r.date
-      )
-    )].sort();
-
-    // Map students
-    const students = {};
-    records.forEach(r => {
-      students[r.roll] ??= { roll: r.roll, name: r.name, attendance: {} };
-      const key = r.subject.endsWith("_TH") || r.subject.endsWith("_PR")
-        ? `${r.date}_${r.subject.endsWith("_TH") ? "TH" : "PR"}`
-        : r.date;
-      students[r.roll].attendance[key] = true;
-    });
-
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(`${subject} ${division}`);
-
-    // Header row
-    ws.addRow(["Roll No", "Name", ...lectureKeys.map(k => {
-      const [d, t] = k.split("_");
-      return t ? `${formatExcelDate(d)} (${t})` : formatExcelDate(d);
-    }), "Attendance %"]);
-    ws.getRow(1).font = { bold: true };
-
-    // Add student rows
-    Object.values(students).forEach(s => {
-      const attendedCount = lectureKeys.filter(k => s.attendance[k]).length;
-      const total = lectureKeys.length;
-      const percent = total ? ((attendedCount / total) * 100).toFixed(1) + "%" : "No Lectures";
-
-      ws.addRow([
-        s.roll,
-        s.name,
-        ...lectureKeys.map(k => s.attendance[k] ? "Present" : "Absent"),
-        percent
-      ]);
-    });
-
-    res.setHeader("Content-Disposition", `attachment; filename=${subject}_${division}.xlsx`);
-    await wb.xlsx.write(res);
-    res.end();
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Export failed");
-  }
-});
-
-
-app.get("/export-combined/:subject", async (req, res) => {
-  try {
-    const base = req.params.subject;
-    const range = req.query.range;
-
-    const today = new Date();
-    let start = new Date();
-    if (range === "week") start.setDate(today.getDate() - 6);
-    else if (range === "2weeks") start.setDate(today.getDate() - 13);
-    else if (range === "month") start.setMonth(today.getMonth() - 1);
-
-    const from = start.toISOString().split("T")[0];
-    const to = today.toISOString().split("T")[0];
-
-    // Get records for this subject + date range
     const records = await Attendance.find({
-      subject: { $regex: `^${base}_(TH|PR)$` },
-      date: { $gte: from, $lte: to }
-    }).lean();
+      subjectId: req.params.subjectId,
+      ...(dateF && { date: dateF })
+    }).sort({ date: 1 }).lean();
 
     if (!records.length) return res.status(404).send("No data.");
 
@@ -412,4 +392,10 @@ app.get("/export-combined/:subject", async (req, res) => {
 app.get("/health", (_, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.use((_, res) => res.status(404).send("Not found."));
-app.listen(process.env.PORT || 3000, () => console.log("Server running."));
+
+// Local dev only — Vercel handles listening automatically
+if (process.env.NODE_ENV !== "production") {
+  app.listen(process.env.PORT || 3000, () => console.log("Server running on port 3000."));
+}
+
+module.exports = app; 
