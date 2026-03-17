@@ -6,13 +6,7 @@ const path = require("path");
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    "https://scannerv03.netlify.app",
-    "http://localhost:3000"
-  ],
-  methods: ["GET", "POST", "PATCH", "DELETE"]
-}));
+app.use(cors()); // allows all origins
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
