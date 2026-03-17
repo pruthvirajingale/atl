@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:iIwYmLipv2IxChqH@cluster99.apwbb2y.mongodb.net/")
+mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:pCl4w3q7micwHpkf@cluster99.apwbb2y.mongodb.net/")
   .then(() => console.log("MongoDB connected"))
   .catch(console.error);
 
