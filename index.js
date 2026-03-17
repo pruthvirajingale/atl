@@ -291,4 +291,8 @@ app.get("/export-combined/:subject", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+app.use((req, res) => res.status(404).send("File not found"));
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
