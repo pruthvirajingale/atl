@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0d0d0d;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .wrap { width: 100%; max-width: 380px; }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+    .badge span {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #4ade80;
+    }
+
+    .box {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 32px 28px;
+      animation: up 0.35s ease both;
+    }
+    @keyframes up {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 13px;
+      color: #666;
+      font-weight: 300;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: #0d0d0d;
+      color: #ffffff;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: #555; }
+    .field input::placeholder { color: #333; }
+    .field input.error { border-color: #7f2020; }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 4px;
+      background: #ffffff;
+      color: #0d0d0d;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:hover { background: #d8d8d8; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    button.loading .spinner { display: block; }
+    button.loading .label { opacity: 0.5; }
+
+    #msg { margin-top: 12px; }
+    .msg {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .ok  { color: #4ade80; background: #0a1a10; border: 1px solid #173325; }
+    .err { color: #f87171; background: #1a0a0a; border: 1px solid #3a1515; }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: #333;
+    }
+    .footer a {
+      color: #555;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.15s;
+    }
+    .footer a:hover { color: #fff; }
+
+    @media (max-width: 420px) { .box { padding: 24px 18px; } }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="badge">
+    <div class="dot"></div>
+    <span>Attendance System</span>
+  </div>
+
+  <div class="box">
+    <p class="eyebrow">Welcome back</p>
+    <h2>Sign in</h2>
+    <p class="sub">Access your dashboard based on your assigned role.</p>
+
+    <div class="field">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="you@college.edu" autocomplete="email" />
+    </div>
+
+    <div class="field">
+      <label for="pass">Password</label>
+      <input type="password" id="pass" placeholder="Your password" autocomplete="current-password" />
+    </div>
+
+    <button id="btn" onclick="doLogin()">
+      <div class="spinner"></div>
+      <span class="label">Sign in</span>
+    </button>
+
+    <div id="msg"></div>
+  </div>
+
+  <p class="footer">First time? <a href="signup.html">Create admin account</a></p>
+</div>
+
+<script>
+  const API = "http://localhost:3000";
+
+  // Redirect map — role → dashboard page
+  const DASH = {
+    admin:           "admin.html",
+    hod:             "hod.html",
+    class_teacher:   "attendance.html",
+    subject_teacher: "attendance.html"
+  };
+
+  // If already logged in, go straight to dashboard
+  (async () => {
+    const token = localStorage.getItem("token");
+    const role  = localStorage.getItem("role");
+    if (token && role && DASH[role]) window.location.href = DASH[role];
+  })();
+
+  async function doLogin() {
+    const email = document.getElementById("email").value.trim();
+    const pass  = document.getElementById("pass").value;
+    const btn   = document.getElementById("btn");
+
+    document.getElementById("msg").innerHTML = "";
+    ["email", "pass"].forEach(id => document.getElementById(id).classList.remove("error"));
+
+    if (!email.includes("@")) return mark("email", "Enter a valid email.");
+    if (!pass)                 return mark("pass",  "Password is required.");
+
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    try {
+      const res  = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+
+      if (!res.ok) return showMsg(data.error || "Login failed.", "err");
+
+      localStorage.setItem("token",        data.token);
+      localStorage.setItem("name",         data.name);
+      localStorage.setItem("role",         data.role);
+      localStorage.setItem("departmentId", data.departmentId || "");
+
+      showMsg(`Welcome, ${data.name}. Redirecting…`, "ok");
+      setTimeout(() => window.location.href = DASH[data.role] || "login.html", 1200);
+    } catch {
+      showMsg("Could not reach server. Check your connection.", "err");
+    } finally {
+      btn.classList.remove("loading");
+      btn.disabled = false;
+    }
+  }
+
+  function mark(id, msg) {
+    document.getElementById(id).classList.add("error");
+    showMsg(msg, "err");
+  }
+
+  function showMsg(text, type) {
+    document.getElementById("msg").innerHTML = `<div class="msg ${type}">${text}</div>`;
+  }
+
+  document.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+</script>
+</body>
+</html>

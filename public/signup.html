@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Setup</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0d0d0d;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fbbf24;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .badge span {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #fbbf24;
+    }
+
+    .box {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 32px 28px;
+      animation: up 0.35s ease both;
+    }
+    @keyframes up {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 300;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 13px;
+      color: #666;
+      font-weight: 300;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .warn {
+      display: flex;
+      gap: 10px;
+      background: #1a1400;
+      border: 1px solid #3d2e00;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 24px;
+    }
+    .warn p {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #fbbf24;
+      line-height: 1.6;
+    }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: #0d0d0d;
+      color: #ffffff;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: #555; }
+    .field input::placeholder { color: #333; }
+    .field input.error { border-color: #7f2020; }
+    .hint {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: #3a3a3a;
+      margin-top: 5px;
+    }
+
+    .divider { height: 1px; background: #222; margin: 16px 0; }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 4px;
+      background: #ffffff;
+      color: #0d0d0d;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:hover { background: #d8d8d8; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    button.loading .spinner { display: block; }
+    button.loading .label { opacity: 0.5; }
+
+    #msg { margin-top: 12px; }
+    .msg {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .ok  { color: #4ade80; background: #0a1a10; border: 1px solid #173325; }
+    .err { color: #f87171; background: #1a0a0a; border: 1px solid #3a1515; }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: #333;
+    }
+    .footer a {
+      color: #555;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.15s;
+    }
+    .footer a:hover { color: #fff; }
+
+    @media (max-width: 420px) {
+      .box { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="badge">
+    <div class="dot"></div>
+    <span>Admin Setup</span>
+  </div>
+
+  <div class="box">
+    <p class="eyebrow">Attendance System</p>
+    <h2>Create admin account</h2>
+    <p class="sub">This account will have full access to departments, subjects, teachers, and all attendance data.</p>
+
+    <div class="warn">
+      <span>⚠</span>
+      <p>Only one admin account should exist. Use this page once during initial setup.</p>
+    </div>
+
+    <div class="field">
+      <label for="name">Full name</label>
+      <input type="text" id="name" placeholder="e.g. Pruthviraj Ingale" autocomplete="name" />
+    </div>
+
+    <div class="field">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="admin@college.edu" autocomplete="email" />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label for="pass">Password</label>
+      <input type="password" id="pass" placeholder="Min. 6 characters" autocomplete="new-password" />
+    </div>
+
+    <div class="field">
+      <label for="confirm">Confirm password</label>
+      <input type="password" id="confirm" placeholder="Re-enter password" autocomplete="new-password" />
+      <p class="hint">Use a strong password — this account controls everything.</p>
+    </div>
+
+    <button id="btn" onclick="doSignup()">
+      <div class="spinner"></div>
+      <span class="label">Create admin account</span>
+    </button>
+
+    <div id="msg"></div>
+  </div>
+
+  <p class="footer">Already set up? <a href="login.html">Sign in instead</a></p>
+</div>
+
+<script>
+  const API = "http://localhost:3000";
+
+  // Redirect to login if admin already exists
+  (async () => {
+    try {
+      const res = await fetch(`${API}/auth/check-admin`);
+      const data = await res.json();
+      if (data.exists) window.location.href = "login.html";
+    } catch {}
+  })();
+
+  async function doSignup() {
+    const name    = document.getElementById("name").value.trim();
+    const email   = document.getElementById("email").value.trim();
+    const pass    = document.getElementById("pass").value;
+    const confirm = document.getElementById("confirm").value;
+    const btn     = document.getElementById("btn");
+
+    document.getElementById("msg").innerHTML = "";
+    ["name","email","pass","confirm"].forEach(id =>
+      document.getElementById(id).classList.remove("error"));
+
+    if (!name)               return err("name",    "Name is required.");
+    if (!email.includes("@")) return err("email",  "Enter a valid email address.");
+    if (pass.length < 6)     return err("pass",    "Password must be at least 6 characters.");
+    if (pass !== confirm)    return err("confirm", "Passwords do not match.");
+
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    try {
+      const res  = await fetch(`${API}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password: pass })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMsg(data.error || "Signup failed.", "err");
+      } else {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("teacherName", data.name);
+        localStorage.setItem("role", data.role);
+        showMsg(`Admin account created. Welcome, ${data.name}. Redirecting…`, "ok");
+        setTimeout(() => window.location.href = "admin.html", 1600);
+      }
+    } catch {
+      showMsg("Could not reach server. Check your connection.", "err");
+    } finally {
+      btn.classList.remove("loading");
+      btn.disabled = false;
+    }
+  }
+
+  function err(id, msg) {
+    document.getElementById(id).classList.add("error");
+    showMsg(msg, "err");
+  }
+
+  function showMsg(text, type) {
+    document.getElementById("msg").innerHTML =
+      `<div class="msg ${type}">${text}</div>`;
+  }
+
+  document.addEventListener("keydown", e => { if (e.key === "Enter") doSignup(); });
+</script>
+</body>
+</html>
