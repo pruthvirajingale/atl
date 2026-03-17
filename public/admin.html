@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< HEAD
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard</title>
@@ -161,6 +162,198 @@
       background:none; border:none; color:#555; cursor:pointer; font-size:13px;
     }
     .pw-toggle:hover { color:#fff; }
+=======
+  <title>Attendance Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+   /* ── Reset ── */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* ── Tokens (matches scanner exactly) ── */
+:root {
+  --bg: #0d0d0d;
+  --surface: #171717;
+  --surface-hover: #1e1e1e;
+  --border: 1px solid #2a2a2a;
+  --ink: #f0f0ee;
+  --ink-muted: #6b6b6b;
+  --ink-faint: #333333;
+  --ok: #4ade80;
+  --ok-bg: #0d1f14;
+  --ok-border: #1a3d26;
+  --err: #f87171;
+  --err-bg: #1f0d0d;
+  --err-border: #3d1a1a;
+  --radius: 10px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  padding: 40px 20px 80px;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+h2 {
+  font-size: 21px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+/* ================= TABS ================= */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.tabs button {
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: var(--border);
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--ink-muted);
+  transition: background 0.15s, color 0.15s;
+  font-weight: 400;
+}
+.tabs button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+  transform: none;
+  box-shadow: none;
+}
+.tabs button.active {
+  background: var(--ink);
+  color: #0d0d0d;
+  border-color: var(--ink);
+  box-shadow: none;
+  font-weight: 500;
+}
+
+/* ================= CONTROLS ================= */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  padding: 18px;
+  border-radius: var(--radius);
+  border: var(--border);
+  backdrop-filter: none;
+}
+
+select, button {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: var(--border);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select {
+  background: #111111;
+  color: var(--ink);
+  min-width: 170px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+select:focus { border-color: #444; background-color: #141414; }
+select option { background: #1a1a1a; color: var(--ink); }
+
+button {
+  background: var(--ink);
+  color: #0d0d0d;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+button:hover { background: #d8d8d6; transform: none; box-shadow: none; }
+button:active { opacity: 0.65; transform: scale(0.985); }
+
+/* ================= STATUS ================= */
+.loading {
+  padding: 12px 15px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* ================= TABLE ================= */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: var(--border);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 2;
+}
+
+th, td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1f1f1f;
+  text-align: left;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+th {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+tbody tr:hover { background: var(--surface-hover); }
+
+/* ================= BADGES ================= */
+.low  { color: var(--err); font-weight: 500; }
+.good { color: var(--ok);  font-weight: 500; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 640px) {
+  body { padding: 24px 14px 72px; }
+  h2 { font-size: 19px; }
+  .controls { padding: 12px; }
+  select { min-width: 140px; }
+}
+
+@supports (-webkit-touch-callout: none) {
+  select, button { font-size: 16px; }
+}
+>>>>>>> 000dc3f8677f9de3f0599752b2f6cba88ed7c57e
   </style>
 </head>
 <body>
