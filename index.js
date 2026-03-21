@@ -392,6 +392,32 @@ app.get("/export/:subjectId", auth(), async (req, res) => {
 app.get("/health", (_, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.use((_, res) => res.status(404).send("Not found."));
+app.post("/attendance/checkin", async (req, res) => {
+  try {
+    const { studentRoll, studentName, subjectId, date } = req.body;
+    if (!studentRoll || !studentName || !subjectId) 
+      return res.status(400).json({ error: "Missing fields." });
+    
+    const s = await Subject.findById(subjectId).lean();
+    if (!s) return res.status(404).json({ error: "Subject not found." });
+    
+    await Attendance.updateOne(
+      { studentRoll, subjectId, date },
+      { $set: { 
+          studentName, 
+          divisionId: s.divisionId, 
+          departmentId: s.departmentId,
+          year: s.year, 
+          semester: s.semester 
+        } 
+      },
+      { upsert: true }
+    );
+    res.json({ message: "Attendance recorded." });
+  } catch (e) { 
+    res.status(500).json({ error: e.message }); 
+  }
+});
 
 // Local dev only — Vercel handles listening automatically
 if (process.env.NODE_ENV !== "production") {
