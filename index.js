@@ -32,7 +32,6 @@ const Department = mongoose.model("Department", new mongoose.Schema({
   name:  { type: String, required: true },
   code:  { type: String, required: true, unique: true, uppercase: true },
   hodId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  // years[].divisions[].rollRange
   years: [{
     year: { type: Number, enum: [1, 2, 3] },
     divisions: [{
@@ -142,7 +141,6 @@ app.post("/auth/login", async (req, res) => {
 app.get("/users", auth("admin", "hod"), async (req, res) => {
   const filter = {};
   if (req.query.role)         filter.role = req.query.role;
-  // HOD can only see teachers in their own department
   if (req.user.role === "hod") filter.departmentId = req.user.departmentId;
   else if (req.query.departmentId) filter.departmentId = req.query.departmentId;
   const users = await User.find(filter, "-password").lean();
@@ -170,7 +168,6 @@ app.patch("/users/:id", auth("admin"), async (req, res) => {
 app.delete("/users/:id", auth("admin", "hod"), async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found." });
-  // HOD can only delete teachers in their own department
   if (req.user.role === "hod" && user.departmentId?.toString() !== req.user.departmentId?.toString())
     return res.status(403).json({ error: "Access denied." });
   await User.findByIdAndDelete(req.params.id);
@@ -208,16 +205,22 @@ app.delete("/departments/:id", auth("admin"), async (req, res) => {
   res.json({ message: "Deleted." });
 });
 
-/* ── Subjects (hod / admin) ── */
+/* ── Subjects ── */
+
+// Public: get subjects for student scanner (no auth required)
+app.get("/subjects/public", async (req, res) => {
+  try {
+    const subjects = await Subject.find({}, "name code divisionName year semester type").lean();
+    res.json(subjects);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 app.get("/subjects", auth(), async (req, res) => {
   const f = {};
-  // Scope by role
   if (req.user.role === "hod") f.departmentId = req.user.departmentId;
   else if (req.user.role === "subject_teacher")
     f._id = { $in: (req.user.assignedSubjects || []).map(a => a.subjectId) };
   else if (req.query.departmentId) f.departmentId = req.query.departmentId;
-  // Safe filters — only apply known fields
   if (req.query.year)       f.year       = +req.query.year;
   if (req.query.semester)   f.semester   = +req.query.semester;
   if (req.query.divisionId) f.divisionId = req.query.divisionId;
@@ -243,7 +246,6 @@ app.post("/subjects", auth("admin", "hod"), async (req, res) => {
 app.patch("/subjects/:id", auth("admin", "hod"), async (req, res) => {
   try {
     const old = await Subject.findById(req.params.id);
-    // Swap teacher assignment if changed
     if (req.body.teacherId !== undefined && old.teacherId?.toString() !== req.body.teacherId) {
       if (old.teacherId)
         await User.findByIdAndUpdate(old.teacherId, { $pull: { assignedSubjects: { subjectId: old._id } } });
@@ -265,6 +267,34 @@ app.delete("/subjects/:id", auth("admin", "hod"), async (req, res) => {
 });
 
 /* ── Attendance ── */
+
+// Public: student QR check-in (no auth required)
+app.post("/attendance/checkin", async (req, res) => {
+  try {
+    const { studentRoll, studentName, subjectId, date } = req.body;
+    if (!studentRoll || !studentName || !subjectId)
+      return res.status(400).json({ error: "Missing fields." });
+
+    const s = await Subject.findById(subjectId).lean();
+    if (!s) return res.status(404).json({ error: "Subject not found." });
+
+    await Attendance.updateOne(
+      { studentRoll, subjectId, date },
+      { $set: {
+          studentName,
+          divisionId: s.divisionId,
+          departmentId: s.departmentId,
+          year: s.year,
+          semester: s.semester
+        }
+      },
+      { upsert: true }
+    );
+    res.json({ message: "Attendance recorded." });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // Bulk mark (present/absent for whole class in one call)
 app.post("/attendance/bulk", auth("admin", "hod", "subject_teacher"), async (req, res) => {
@@ -391,37 +421,10 @@ app.get("/export/:subjectId", auth(), async (req, res) => {
 
 app.get("/health", (_, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
-app.use((_, res) => res.status(404).send("Not found."));
-app.post("/attendance/checkin", async (req, res) => {
-  try {
-    const { studentRoll, studentName, subjectId, date } = req.body;
-    if (!studentRoll || !studentName || !subjectId) 
-      return res.status(400).json({ error: "Missing fields." });
-    
-    const s = await Subject.findById(subjectId).lean();
-    if (!s) return res.status(404).json({ error: "Subject not found." });
-    
-    await Attendance.updateOne(
-      { studentRoll, subjectId, date },
-      { $set: { 
-          studentName, 
-          divisionId: s.divisionId, 
-          departmentId: s.departmentId,
-          year: s.year, 
-          semester: s.semester 
-        } 
-      },
-      { upsert: true }
-    );
-    res.json({ message: "Attendance recorded." });
-  } catch (e) { 
-    res.status(500).json({ error: e.message }); 
-  }
-});
+app.use((_, res) => res.status(404).send("Not found.")); // ← always last
 
-// Local dev only — Vercel handles listening automatically
 if (process.env.NODE_ENV !== "production") {
   app.listen(process.env.PORT || 3000, () => console.log("Server running on port 3000."));
 }
 
-module.exports = app; 
+module.exports = app;
