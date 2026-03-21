@@ -2,180 +2,400 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>QR Attendance Scanner</title>
+  <title>QR Attendance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0d0d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="QR Attend" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
 
   <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #171717;
+      --surface-hover: #1e1e1e;
+      --border: 1px solid #2a2a2a;
+      --ink: #f0f0ee;
+      --ink-muted: #6b6b6b;
+      --ink-faint: #333333;
+      --ok: #4ade80;
+      --ok-bg: #0d1f14;
+      --ok-border: #1a3d26;
+      --err: #f87171;
+      --err-bg: #1f0d0d;
+      --err-border: #3d1a1a;
+      --radius: 10px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #0a0a0a;
-      padding: 16px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
       min-height: 100vh;
-      overflow-x: hidden;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px 80px;
     }
-    .card {
+
+    .shell { width: 100%; max-width: 420px; }
+
+    /* ── Header ── */
+    .header {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 5px;
+    }
+    .header h1 {
+      font-size: 21px;
+      font-weight: 300;
+      color: var(--ink);
+      letter-spacing: -0.03em;
+    }
+    .header-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+
+    /* ── Student pill ── */
+    #studentInfo {
+      display: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-muted);
+      background: var(--surface);
+      border: var(--border);
+      border-radius: 100px;
+      padding: 7px 14px;
+      margin-bottom: 16px;
+      width: fit-content;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+    }
+
+    /* ── Sections ── */
+    .section {
+      background: var(--surface);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 8px;
+    }
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 14px;
+    }
+
+    /* ── Inputs ── */
+    input, select {
       width: 100%;
-      max-width: 100%;
-      background: #ffffff;
-      padding: 24px 20px;
-      border-radius: 12px;
-      margin-top: 8px;
-    }
-    h2 {
-      text-align: center;
-      font-size: 22px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 24px;
-      letter-spacing: -0.02em;
-    }
-    button, input, select {
-      width: 100%;
-      padding: 16px;
-      margin-top: 12px;
-      font-size: 16px;
-      font-family: inherit;
-      border: 1px solid #e0e0e0;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      background: #111111;
+      color: var(--ink);
+      border: var(--border);
       border-radius: 8px;
       outline: none;
-      transition: all 0.2s ease;
-      background: #ffffff;
-      color: #1a1a1a;
+      transition: border-color 0.15s, background 0.15s;
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
     }
-    input { cursor: text; }
-    input::placeholder { color: #9ca3af; }
-    input:focus { border-color: #1a1a1a; background: #fafafa; }
+    input + input { margin-top: 8px; }
+    input::placeholder { color: #3d3d3d; }
+    input:focus { border-color: #444; background: #141414; }
     select {
-      cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231a1a1a' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 16px center;
-      padding-right: 48px;
-    }
-    select:focus { border-color: #1a1a1a; background-color: #fafafa; }
-    button {
+      background-position: right 14px center;
+      padding-right: 40px;
       cursor: pointer;
-      font-weight: 600;
-      background: #1a1a1a;
-      color: #ffffff;
-      border: 1px solid #1a1a1a;
-      margin-top: 20px;
-      min-height: 50px;
+    }
+    select:focus { border-color: #444; background-color: #141414; }
+    select option { background: #1a1a1a; color: var(--ink); }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+      border: none;
+      letter-spacing: 0.01em;
+      -webkit-appearance: none;
       touch-action: manipulation;
     }
-    button:active { transform: scale(0.97); background: #2d2d2d; }
+    .btn:active { opacity: 0.65; transform: scale(0.985); }
+    .btn-primary { background: var(--ink); color: #0d0d0d; margin-top: 14px; }
+    .btn-primary:hover { background: #d8d8d6; }
+    .btn-outline {
+      background: transparent;
+      color: var(--ink-muted);
+      border: var(--border);
+      margin-top: 0;
+    }
+    .btn-outline:hover { background: var(--surface-hover); color: var(--ink); }
+
+    /* ── Camera controls row ── */
+    .camera-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .camera-controls .btn-primary { margin-top: 0; flex: 1; }
+    .camera-controls .btn-outline { flex: 0 0 auto; width: auto; padding: 12px 18px; }
+
+    /* ── Scanner area ── */
     #reader {
-      margin-top: 20px;
-      border: 2px dashed #e0e0e0;
       border-radius: 8px;
-      padding: 20px;
-      background: #fafafa;
-      min-height: 240px;
+      overflow: hidden;
+      background: #111;
+      border: var(--border);
+      min-height: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #6a6a6a;
-      font-size: 15px;
-      text-align: center;
-      line-height: 1.6;
     }
-    .success {
-      color: #16a34a;
-      font-weight: 600;
-      margin-top: 16px;
-      padding: 16px;
-      background: #f0fdf4;
-      border-radius: 8px;
-      border: 1px solid #86efac;
+    #reader-placeholder {
       text-align: center;
-      font-size: 15px;
+      color: #2e2e2e;
+      font-size: 13px;
+      line-height: 1.8;
+      padding: 24px;
+    }
+    #reader-placeholder svg { display: block; margin: 0 auto 12px; }
+
+    /* ── Status ── */
+    #status { margin-top: 10px; }
+    .msg {
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 13.5px;
       line-height: 1.5;
     }
-    .error {
-      color: #dc2626;
-      font-weight: 600;
-      margin-top: 16px;
-      padding: 16px;
-      background: #fef2f2;
-      border-radius: 8px;
-      border: 1px solid #fecaca;
-      text-align: center;
-      font-size: 15px;
-      line-height: 1.5;
+    .msg-ok  { color: var(--ok);  background: var(--ok-bg);  border: 1px solid var(--ok-border); }
+    .msg-err { color: var(--err); background: var(--err-bg); border: 1px solid var(--err-border); }
+
+    /* ── Install modal ── */
+    #install-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 16px 32px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
     }
-    .small {
+    #install-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .install-modal {
+      width: 100%;
+      max-width: 420px;
+      background: #181818;
+      border: 1px solid #262626;
+      border-radius: 20px;
+      padding: 28px 24px 22px;
+      transform: translateY(28px);
+      transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.75);
+    }
+    #install-overlay.visible .install-modal {
+      transform: translateY(0);
+    }
+    .install-modal-icon {
+      width: 50px; height: 50px;
+      background: #111;
+      border: 1px solid #272727;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .install-modal-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+    }
+    .install-modal-body {
+      font-size: 13.5px;
+      color: var(--ink-muted);
+      line-height: 1.7;
+      margin-bottom: 26px;
+    }
+    .install-modal-body code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      color: #505050;
+      background: #111;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #242424;
+    }
+    .install-modal-actions { display: flex; flex-direction: column; gap: 6px; }
+    .im-btn {
+      width: 100%;
+      padding: 13px;
       font-size: 14px;
-      color: #6a6a6a;
-      text-align: center;
-      margin-top: 16px;
-      line-height: 1.6;
-      padding: 0 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      border-radius: 11px;
+      cursor: pointer;
+      border: none;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.005em;
+    }
+    .im-btn:active { opacity: 0.6; transform: scale(0.984); }
+    .im-btn-primary { background: var(--ink); color: #0d0d0d; }
+    .im-btn-primary:hover { background: #d8d8d6; }
+    .im-btn-ghost {
+      background: transparent;
+      color: var(--ink-muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    @media (max-width: 360px) {
+      body { padding: 24px 14px 72px; }
+      .header h1 { font-size: 19px; }
     }
     @supports (-webkit-touch-callout: none) {
-      input, select, button { font-size: 16px; }
-    }
-    @media (max-width: 360px) {
-      .card { padding: 20px 16px; }
-      h2 { font-size: 20px; }
-      button, input, select { padding: 14px; font-size: 15px; }
-      #reader { min-height: 200px; }
-    }
-    @media (max-height: 600px) and (orientation: landscape) {
-      body { padding: 12px; }
-      .card { padding: 16px; }
-      h2 { margin-bottom: 16px; font-size: 20px; }
-      #reader { min-height: 160px; }
-      button, input, select { margin-top: 8px; }
+      input, select, .btn { font-size: 16px; }
+      #install-overlay { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
 
 <body>
-<div class="card">
-  <h2>QR Attendance Scanner</h2>
+<div class="shell">
 
-  <p class="small" id="studentInfo"></p>
-
-  <div id="studentBox" style="display:none;">
-    <input type="text" id="roll" placeholder="Enter Roll Number" />
-    <input type="text" id="name" placeholder="Enter Student Name" />
-    <button onclick="saveStudent()">Save Details</button>
+  <div class="header">
+    <div>
+      <p class="header-label">Attendance System</p>
+      <h1>QR Scanner</h1>
+    </div>
+    <div class="header-dot" id="statusDot"></div>
   </div>
 
-  <button onclick="startScanner()">Start Camera Scanner</button>
-  <div id="reader">Scanner will appear here...</div>
-  <p id="status"></p>
+  <!-- Shows saved student info — tap to edit -->
+  <div id="studentInfo" onclick="editStudent()"></div>
 
-  <hr />
-  <select id="subject">
-  <option value="">-- Select Subject --</option>
+  <!-- Student details -->
+  <div class="section" id="studentBox" style="display:none;">
+    <p class="section-label">Your Details</p>
+    <input type="text" id="roll" placeholder="Roll Number" />
+    <input type="text" id="name" placeholder="Full Name" />
+    <button class="btn btn-primary" onclick="saveStudent()">Save</button>
+  </div>
 
-  <option value="NIS_TH">NIS - Theory</option>
-  <option value="NIS_PR">NIS - Practical</option>
+  <!-- Scanner -->
+  <div class="section">
+    <p class="section-label">Camera</p>
+    <div id="reader">
+      <div id="reader-placeholder">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <rect x="3" y="3" width="7" height="7" rx="1.2"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.2"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.2"/>
+          <rect x="14" y="14" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="18.5" y="14" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="14" y="18.5" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.4"/>
+        </svg>
+        Tap to open camera
+      </div>
+    </div>
 
-  <option value="SFT_TH">SFT - Theory</option>
-  <option value="SFT_PR">SFT - Practical</option>
+    <div class="camera-controls">
+      <button class="btn btn-primary" id="startBtn" onclick="startScanner()">Start Camera</button>
+      <button class="btn btn-outline" id="stopBtn" onclick="stopScanner()" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-2px;margin-right:5px;"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        Stop
+      </button>
+    </div>
+    <div id="status"></div>
+  </div>
 
-  <option value="MAN">MAN</option>
-  <option value="ETI">ETI</option>
-
-  <option value="CSS_TH">CSS - Theory</option>
-  <option value="CSS_PR">CSS - Practical</option>
-
-  <option value="MAD_TH">MAD - Theory</option>
-  <option value="MAD_PR">MAD - Practical</option>
-</select>
+  <!-- Subject — loaded dynamically from API -->
+  <div class="section">
+    <p class="section-label">Subject</p>
+    <select id="subject">
+      <option value="">Loading subjects…</option>
+    </select>
+  </div>
 
 </div>
 
-<script> 
- const API_BASE = "https://attendance-version-1.vercel.app/";
+<!-- Install modal -->
+<div id="install-overlay" onclick="handleOverlayClick(event)">
+  <div class="install-modal">
+    <div class="install-modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c0c0be" stroke-width="1.4">
+        <rect x="3" y="3" width="7" height="7" rx="1.1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.1"/>
+        <rect x="14.5" y="14.5" width="2" height="2" rx="0.3"/>
+        <rect x="18.5" y="14.5" width="2" height="2" rx="0.3"/>
+        <rect x="14.5" y="18.5" width="2" height="2" rx="0.3"/>
+        <rect x="18.5" y="18.5" width="2" height="2" rx="0.3"/>
+      </svg>
+    </div>
+    <div class="install-modal-title">Add to Home Screen</div>
+    <div class="install-modal-body" id="install-modal-body">
+      Install QR Attendance for instant one-tap access — no browser bar, no extra steps.
+    </div>
+    <div class="install-modal-actions">
+      <button class="im-btn im-btn-primary" id="installBtn" onclick="triggerInstall()">Install</button>
+      <button class="im-btn im-btn-ghost" onclick="dismissInstall()">Not now</button>
+    </div>
+  </div>
+</div>
 
+<script>
+  const API_BASE = "https://attendance-version-1.vercel.app";
   const TOKEN_PREFIX = "COLLEGE_QR_";
   const TOKEN_INTERVAL = 30;
 
@@ -183,114 +403,221 @@
     return TOKEN_PREFIX + Math.floor(Date.now() / 1000 / TOKEN_INTERVAL);
   }
 
-  let html5QrCode;
-  let scanning = false;
+  let html5QrCode, scanning = false;
+  let deferredPrompt = null;
 
+  // ── PWA install ──
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!localStorage.getItem('installDismissed')) {
+      setTimeout(showInstall, 2000);
+    }
+  });
+
+  function showInstall() {
+    document.getElementById('install-overlay').classList.add('visible');
+  }
+  function dismissInstall() {
+    document.getElementById('install-overlay').classList.remove('visible');
+    localStorage.setItem('installDismissed', '1');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('install-overlay')) dismissInstall();
+  }
+  async function triggerInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    dismissInstall();
+  }
+  window.addEventListener('appinstalled', dismissInstall);
+
+  // iOS
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+    setTimeout(() => {
+      document.getElementById('install-modal-body').innerHTML =
+        'Tap the <code>Share</code> icon in Safari, then select <code>Add to Home Screen</code>.';
+      document.getElementById('installBtn').style.display = 'none';
+      showInstall();
+    }, 2000);
+  }
+
+  // ── Student ──
   function loadStudent() {
     const roll = localStorage.getItem("roll");
     const name = localStorage.getItem("name");
-
+    const info = document.getElementById("studentInfo");
     if (roll && name) {
-      document.getElementById("studentInfo").innerText =
-        `Roll No: ${roll} | Name: ${name}`;
+      info.style.display = "block";
+      info.innerText = `${roll}  ·  ${name}  · tap to edit`;
       document.getElementById("studentBox").style.display = "none";
     } else {
+      info.style.display = "none";
       document.getElementById("studentBox").style.display = "block";
     }
+  }
+
+  function editStudent() {
+    localStorage.removeItem("roll");
+    localStorage.removeItem("name");
+    loadStudent();
   }
 
   function saveStudent() {
     const roll = document.getElementById("roll").value.trim();
     const name = document.getElementById("name").value.trim();
-
-    if (!roll || !name) {
-      alert("Enter roll number and name");
-      return;
-    }
-
+    if (!roll || !name) { alert("Please enter both roll number and name."); return; }
     localStorage.setItem("roll", roll);
     localStorage.setItem("name", name);
     loadStudent();
   }
 
+  // ── Subjects ──
+  async function loadSubjects() {
+    const select = document.getElementById("subject");
+    // Restore previously selected subject
+    const savedSubject = localStorage.getItem("selectedSubject");
+    try {
+      const res = await fetch(API_BASE + "/subjects/public");
+      if (!res.ok) throw new Error("Failed to load");
+      const subjects = await res.json();
+      select.innerHTML = '<option value="">Select subject…</option>';
+      subjects.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s._id;
+        opt.textContent = `${s.code} — ${s.name} (${s.divisionName} Y${s.year}S${s.semester} ${s.type})`;
+        if (savedSubject === s._id) opt.selected = true;
+        select.appendChild(opt);
+      });
+    } catch {
+      select.innerHTML = '<option value="">Failed to load — refresh to retry</option>';
+    }
+  }
+
+  // Save selected subject so it persists across sessions
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("subject").addEventListener("change", (e) => {
+      localStorage.setItem("selectedSubject", e.target.value);
+    });
+  });
+
+  // ── Status ──
+  function setStatus(msg, type) {
+    document.getElementById("status").innerHTML = `<div class="msg msg-${type}">${msg}</div>`;
+    document.getElementById("statusDot").style.background =
+      type === 'ok' ? '#4ade80' : type === 'err' ? '#f87171' : '#2a2a2a';
+  }
+  function clearStatus() {
+    document.getElementById("status").innerHTML = '';
+    document.getElementById("statusDot").style.background = '#2a2a2a';
+  }
+
+  // ── Scanner ──
   function startScanner() {
     const roll = localStorage.getItem("roll");
     const name = localStorage.getItem("name");
-
-    if (!roll || !name) {
-      alert("Please save student details first");
-      return;
-    }
-
+    if (!roll || !name) { alert("Save your details first."); return; }
+    const subjectId = document.getElementById("subject").value;
+    if (!subjectId) { alert("Please select a subject first."); return; }
     if (scanning) return;
 
     document.getElementById("reader").innerHTML = "";
-    document.getElementById("status").innerText = "Opening camera...";
+    clearStatus();
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("stopBtn").style.display = "block";
 
     html5QrCode = new Html5Qrcode("reader");
     scanning = true;
 
     html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
+      { fps: 10, qrbox: 220 },
       onScanSuccess
-    ).catch((err) => {
+    ).catch(() => {
       scanning = false;
-      document.getElementById("status").innerHTML =
-        "<span class='error'>Camera permission denied or not available</span>";
+      resetCameraUI();
+      setStatus("Camera permission denied or unavailable.", "err");
     });
+  }
+
+  function stopScanner() {
+    if (!scanning) return;
+    html5QrCode.stop().then(() => {
+      scanning = false;
+      resetCameraUI();
+      clearStatus();
+    }).catch(() => { scanning = false; resetCameraUI(); });
+  }
+
+  function resetCameraUI() {
+    document.getElementById("startBtn").style.display = "block";
+    document.getElementById("stopBtn").style.display = "none";
+    document.getElementById("reader").innerHTML = `
+      <div id="reader-placeholder">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <rect x="3" y="3" width="7" height="7" rx="1.2"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.2"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.2"/>
+          <rect x="14" y="14" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="18.5" y="14" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="14" y="18.5" width="2.5" height="2.5" rx="0.4"/>
+          <rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.4"/>
+        </svg>
+        Tap to open camera
+      </div>`;
   }
 
   function onScanSuccess(text) {
     if (text === expectedToken()) {
-      document.getElementById("status").innerHTML =
-        "<span class='success'>QR verified. Marking attendance...</span>";
-
+      setStatus("QR verified — marking attendance…", "ok");
       html5QrCode.stop().then(() => {
         scanning = false;
+        resetCameraUI();
         markAttendance();
       });
     } else {
-      document.getElementById("status").innerHTML =
-        "<span class='error'>Invalid or expired QR</span>";
+      setStatus("Invalid or expired QR code.", "err");
     }
   }
 
   async function markAttendance() {
     const roll = localStorage.getItem("roll");
     const name = localStorage.getItem("name");
-    const subject = document.getElementById("subject").value;
-
-    if (!subject) {
-      document.getElementById("status").innerHTML =
-        "<span class='error'>Select subject</span>";
-      return;
-    }
+    const subjectId = document.getElementById("subject").value;
+    if (!subjectId) { setStatus("Please select a subject first.", "err"); return; }
 
     try {
-      const res = await fetch(API_BASE + "/attendance", {
+      const res = await fetch(API_BASE + "/attendance/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roll, name, subject })
+        body: JSON.stringify({
+          studentRoll: roll,
+          studentName: name,
+          subjectId: subjectId,
+          date: new Date().toISOString().split("T")[0]
+        })
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        document.getElementById("status").innerHTML =
-          `<span class='error'>${data.error}</span>`;
+        setStatus(data.error || "Failed to record attendance.", "err");
         return;
       }
-
-      document.getElementById("status").innerHTML =
-        "<span class='success'>Attendance recorded successfully</span>";
-    } catch {
-      document.getElementById("status").innerHTML =
-        "<span class='error'>Server not reachable</span>";
+      setStatus("Attendance recorded successfully.", "ok");
+    } catch (err) {
+      setStatus("Server unreachable. Try again. (" + err.message + ")", "err");
     }
   }
 
   loadStudent();
+  loadSubjects();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>
