@@ -62,10 +62,15 @@ const Attendance = mongoose.model("Attendance", new mongoose.Schema({
   year:         Number,
   semester:     Number,
   date:         { type: String, required: true },
+  // NEW: Track whether this record is for Theory (TH) or Practical (PR)
+  // Defaults to "TH" for backward compatibility with existing records
+  lectureType:  { type: String, enum: ["TH", "PR"], default: "TH" },
   markedBy:     { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
 }));
 
-Attendance.schema.index({ studentRoll: 1, subjectId: 1, date: 1 }, { unique: true });
+// Updated unique index now includes lectureType so a student can have both
+// a TH and a PR record for the same subject on the same date
+Attendance.schema.index({ studentRoll: 1, subjectId: 1, date: 1, lectureType: 1 }, { unique: true });
 
 /* ── Middleware ── */
 
@@ -107,6 +112,18 @@ function getDateRange(range) {
 function fmtDate(iso) {
   const [y, m, d] = iso.split("-");
   return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]} ${y.slice(2)}`;
+}
+
+/**
+ * Validate that a given lectureType is compatible with the subject's type.
+ * e.g. you cannot mark "PR" attendance for a "TH"-only subject.
+ */
+function validateLectureType(subjectType, lectureType) {
+  if (subjectType === "TH" && lectureType === "PR")
+    return "Cannot mark Practical attendance for a Theory-only subject.";
+  if (subjectType === "PR" && lectureType === "TH")
+    return "Cannot mark Theory attendance for a Practical-only subject.";
+  return null; // valid
 }
 
 /* ── Auth ── */
@@ -210,7 +227,10 @@ app.delete("/departments/:id", auth("admin"), async (req, res) => {
 // Public: get subjects for student scanner (no auth required)
 app.get("/subjects/public", async (req, res) => {
   try {
-    const subjects = await Subject.find({}, "name code divisionName year semester type").lean();
+    const subjects = await Subject.find({})
+      .select("name code divisionName year semester type departmentId")
+      .sort({ year: 1, semester: 1, name: 1 })
+      .lean();
     res.json(subjects);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -268,67 +288,120 @@ app.delete("/subjects/:id", auth("admin", "hod"), async (req, res) => {
 
 /* ── Attendance ── */
 
-// Public: student QR check-in (no auth required)
+/**
+ * Public: student QR check-in (no auth required)
+ *
+ * NEW: Accepts optional `lectureType` ("TH" or "PR"). Defaults to "TH".
+ * For TH+PR subjects the QR payload or UI must pass the correct lectureType.
+ * For TH-only or PR-only subjects the value is enforced server-side.
+ */
 app.post("/attendance/checkin", async (req, res) => {
   try {
-    const { studentRoll, studentName, subjectId, date } = req.body;
+    const { studentRoll, studentName, subjectId, date, lectureType } = req.body;
     if (!studentRoll || !studentName || !subjectId)
       return res.status(400).json({ error: "Missing fields." });
 
     const s = await Subject.findById(subjectId).lean();
     if (!s) return res.status(404).json({ error: "Subject not found." });
 
+    // Determine effective lecture type
+    // For pure TH/PR subjects, ignore what was sent and enforce the subject type
+    let effectiveLectureType;
+    if (s.type === "TH")    effectiveLectureType = "TH";
+    else if (s.type === "PR") effectiveLectureType = "PR";
+    else {
+      // TH+PR: caller must specify; default to "TH" if omitted
+      effectiveLectureType = lectureType === "PR" ? "PR" : "TH";
+    }
+
+    const today = date || new Date().toISOString().split("T")[0];
+
     await Attendance.updateOne(
-      { studentRoll, subjectId, date },
+      { studentRoll, subjectId, date: today, lectureType: effectiveLectureType },
       { $set: {
           studentName,
-          divisionId: s.divisionId,
+          divisionId:   s.divisionId,
           departmentId: s.departmentId,
-          year: s.year,
-          semester: s.semester
+          year:         s.year,
+          semester:     s.semester,
+          lectureType:  effectiveLectureType
         }
       },
       { upsert: true }
     );
-    res.json({ message: "Attendance recorded." });
+    res.json({ message: "Attendance recorded.", lectureType: effectiveLectureType });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Bulk mark (present/absent for whole class in one call)
+/**
+ * Bulk mark — present/absent for whole class in one call.
+ *
+ * NEW: Accepts `lectureType` ("TH" or "PR") in the request body.
+ * Required for TH+PR subjects. Auto-enforced for TH-only and PR-only subjects.
+ */
 app.post("/attendance/bulk", auth("admin", "hod", "subject_teacher"), async (req, res) => {
   try {
-    const { subjectId, divisionId, date, records } = req.body;
+    const { subjectId, divisionId, date, records, lectureType } = req.body;
     const subject = await Subject.findById(subjectId).lean();
     if (!subject) return res.status(404).json({ error: "Subject not found." });
 
+    // Resolve effective lecture type
+    let effectiveLectureType;
+    if (subject.type === "TH")     effectiveLectureType = "TH";
+    else if (subject.type === "PR") effectiveLectureType = "PR";
+    else {
+      // TH+PR: caller must specify
+      if (!lectureType || !["TH", "PR"].includes(lectureType))
+        return res.status(400).json({ error: "lectureType ('TH' or 'PR') is required for TH+PR subjects." });
+      effectiveLectureType = lectureType;
+    }
+
     const today = date || new Date().toISOString().split("T")[0];
-    const present = records.filter(r => r.present);
+    const present    = records.filter(r => r.present);
     const absentRolls = records.filter(r => !r.present).map(r => r.studentRoll);
 
+    // Only delete absent records for the specific lecture type
     if (absentRolls.length)
-      await Attendance.deleteMany({ studentRoll: { $in: absentRolls }, subjectId, date: today });
+      await Attendance.deleteMany({
+        studentRoll: { $in: absentRolls },
+        subjectId,
+        date: today,
+        lectureType: effectiveLectureType
+      });
 
     if (present.length) {
       await Attendance.bulkWrite(present.map(r => ({
         updateOne: {
-          filter: { studentRoll: r.studentRoll, subjectId, date: today },
-          update: { $set: { studentName: r.studentName, divisionId, departmentId: subject.departmentId,
-                            year: subject.year, semester: subject.semester, markedBy: req.user.id } },
+          filter: { studentRoll: r.studentRoll, subjectId, date: today, lectureType: effectiveLectureType },
+          update: { $set: {
+            studentName:  r.studentName,
+            divisionId,
+            departmentId: subject.departmentId,
+            year:         subject.year,
+            semester:     subject.semester,
+            lectureType:  effectiveLectureType,
+            markedBy:     req.user.id
+          }},
           upsert: true
         }
       })));
     }
 
-    res.json({ message: `${present.length} present, ${absentRolls.length} absent.` });
+    res.json({ message: `${present.length} present, ${absentRolls.length} absent.`, lectureType: effectiveLectureType });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Get attendance (scoped by role)
+/**
+ * Get attendance (scoped by role).
+ *
+ * NEW: Optional query param `lectureType=TH|PR` to filter by lecture type.
+ * If omitted, all records are returned (both TH and PR).
+ */
 app.get("/attendance", auth(), async (req, res) => {
   try {
-    const { subjectId, divisionId, year, semester, departmentId, range, date, from, to } = req.query;
+    const { subjectId, divisionId, year, semester, departmentId, range, date, from, to, lectureType } = req.query;
     const f = {};
 
     if (req.user.role === "subject_teacher")
@@ -344,6 +417,9 @@ app.get("/attendance", auth(), async (req, res) => {
     if (year)         f.year         = +year;
     if (semester)     f.semester     = +semester;
 
+    // NEW: filter by lecture type
+    if (lectureType && ["TH", "PR"].includes(lectureType)) f.lectureType = lectureType;
+
     if (date) f.date = date;
     else if (from || to) f.date = { ...(from && { $gte: from }), ...(to && { $lte: to }) };
     else if (range) { const r = getDateRange(range); f.date = { $gte: r.from, $lte: r.to }; }
@@ -352,69 +428,177 @@ app.get("/attendance", auth(), async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Toggle single record
+/**
+ * Toggle single record.
+ *
+ * NEW: Accepts `lectureType` in the request body.
+ * Auto-enforced for pure TH/PR subjects; required for TH+PR subjects.
+ */
 app.patch("/attendance", auth("admin", "hod", "subject_teacher"), async (req, res) => {
   try {
-    const { studentRoll, subjectId, date, present, studentName } = req.body;
+    const { studentRoll, subjectId, date, present, studentName, lectureType } = req.body;
+
+    const s = await Subject.findById(subjectId).lean();
+    if (!s) return res.status(404).json({ error: "Subject not found." });
+
+    // Resolve effective lecture type
+    let effectiveLectureType;
+    if (s.type === "TH")     effectiveLectureType = "TH";
+    else if (s.type === "PR") effectiveLectureType = "PR";
+    else {
+      if (!lectureType || !["TH", "PR"].includes(lectureType))
+        return res.status(400).json({ error: "lectureType ('TH' or 'PR') is required for TH+PR subjects." });
+      effectiveLectureType = lectureType;
+    }
+
     if (present) {
-      const s = await Subject.findById(subjectId).lean();
       await Attendance.updateOne(
-        { studentRoll, subjectId, date },
-        { $set: { studentName, divisionId: s.divisionId, departmentId: s.departmentId,
-                  year: s.year, semester: s.semester, markedBy: req.user.id } },
+        { studentRoll, subjectId, date, lectureType: effectiveLectureType },
+        { $set: {
+            studentName,
+            divisionId:   s.divisionId,
+            departmentId: s.departmentId,
+            year:         s.year,
+            semester:     s.semester,
+            lectureType:  effectiveLectureType,
+            markedBy:     req.user.id
+          }
+        },
         { upsert: true }
       );
     } else {
-      await Attendance.deleteOne({ studentRoll, subjectId, date });
+      await Attendance.deleteOne({ studentRoll, subjectId, date, lectureType: effectiveLectureType });
     }
-    res.json({ message: "Updated." });
+    res.json({ message: "Updated.", lectureType: effectiveLectureType });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 /* ── Export Excel ── */
 
+/**
+ * Export attendance to Excel.
+ *
+ * Behaviour by subject type:
+ *  - TH-only or PR-only: single sheet, same as before (just labelled accordingly).
+ *  - TH+PR: two sheets — one for Theory, one for Practical — plus a Summary sheet
+ *    showing TH%, PR%, and an overall combined %.
+ *
+ * NEW query param: `lectureType=TH|PR` — if provided on a TH+PR subject, exports
+ * only that lecture type (single sheet). Omit to get all sheets.
+ */
 app.get("/export/:subjectId", auth(), async (req, res) => {
   try {
     const subject = await Subject.findById(req.params.subjectId)
       .populate("departmentId", "name code years").lean();
     if (!subject) return res.status(404).json({ error: "Subject not found." });
 
-    const { range, from, to } = req.query;
-    const dateF = range ? (() => { const r = getDateRange(range); return { $gte: r.from, $lte: r.to }; })()
-                : (from || to) ? { ...(from && { $gte: from }), ...(to && { $lte: to }) } : null;
+    const { range, from, to, lectureType: filterType } = req.query;
+    const dateF = range
+      ? (() => { const r = getDateRange(range); return { $gte: r.from, $lte: r.to }; })()
+      : (from || to) ? { ...(from && { $gte: from }), ...(to && { $lte: to }) } : null;
 
-    const records = await Attendance.find({
+    const baseQuery = {
       subjectId: req.params.subjectId,
       ...(dateF && { date: dateF })
-    }).sort({ date: 1 }).lean();
+    };
 
-    if (!records.length) return res.status(404).send("No data.");
-
-    const dates = [...new Set(records.map(r => r.date))].sort();
-    const students = {};
-    records.forEach(r => {
-      students[r.studentRoll] ??= { roll: r.studentRoll, name: r.studentName, att: {} };
-      students[r.studentRoll].att[r.date] = true;
-    });
+    // Determine which lecture types to export
+    let typesToExport;
+    if (subject.type === "TH")      typesToExport = ["TH"];
+    else if (subject.type === "PR") typesToExport = ["PR"];
+    else if (filterType && ["TH", "PR"].includes(filterType)) typesToExport = [filterType];
+    else                            typesToExport = ["TH", "PR"]; // full TH+PR export
 
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(`${subject.code}-${subject.divisionName}`);
-    ws.addRow(["Roll", "Name", ...dates.map(fmtDate), "Present", "Total", "%"]);
-    ws.getRow(1).font = { bold: true };
 
-    Object.values(students)
-      .sort((a, b) => +a.roll - +b.roll)
-      .forEach(s => {
-        const attended = dates.filter(d => s.att[d]).length;
-        ws.addRow([s.roll, s.name, ...dates.map(d => s.att[d] ? "P" : "A"),
-          attended, dates.length, dates.length ? ((attended / dates.length) * 100).toFixed(1) + "%" : "N/A"]);
+    // Helper: build one worksheet for a given lectureType
+    async function buildSheet(lt) {
+      const records = await Attendance.find({ ...baseQuery, lectureType: lt }).sort({ date: 1 }).lean();
+      if (!records.length) return null;
+
+      const dates    = [...new Set(records.map(r => r.date))].sort();
+      const students = {};
+      records.forEach(r => {
+        students[r.studentRoll] ??= { roll: r.studentRoll, name: r.studentName, att: {} };
+        students[r.studentRoll].att[r.date] = true;
       });
+
+      const label = lt === "TH" ? "Theory" : "Practical";
+      const ws    = wb.addWorksheet(`${subject.code}-${subject.divisionName}-${label}`);
+
+      const headerRow = ws.addRow(["Roll", "Name", ...dates.map(fmtDate), "Present", "Total", "%"]);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: "pattern", pattern: "solid",
+        fgColor: { argb: lt === "TH" ? "FFD6E4FF" : "FFFFD6D6" }
+      };
+
+      const sortedStudents = Object.values(students).sort((a, b) => +a.roll - +b.roll);
+      sortedStudents.forEach(s => {
+        const attended = dates.filter(d => s.att[d]).length;
+        ws.addRow([
+          s.roll, s.name,
+          ...dates.map(d => s.att[d] ? "P" : "A"),
+          attended, dates.length,
+          dates.length ? ((attended / dates.length) * 100).toFixed(1) + "%" : "N/A"
+        ]);
+      });
+
+      return { students: sortedStudents, dates, label };
+    }
+
+    const sheetResults = {};
+    for (const lt of typesToExport) {
+      sheetResults[lt] = await buildSheet(lt);
+    }
+
+    const hasAnyData = Object.values(sheetResults).some(r => r !== null);
+    if (!hasAnyData) return res.status(404).send("No data.");
+
+    // Summary sheet for TH+PR full export
+    if (typesToExport.length === 2 && sheetResults["TH"] && sheetResults["PR"]) {
+      const summaryWs = wb.addWorksheet("Summary");
+      const sumHeader = summaryWs.addRow(["Roll", "Name", "TH Present", "TH Total", "TH %", "PR Present", "PR Total", "PR %", "Overall %"]);
+      sumHeader.font = { bold: true };
+      sumHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2F0D9" } };
+
+      // Merge student lists from both sheets
+      const allRolls = new Set([
+        ...sheetResults["TH"].students.map(s => s.roll),
+        ...sheetResults["PR"].students.map(s => s.roll)
+      ]);
+
+      const thMap = Object.fromEntries(sheetResults["TH"].students.map(s => [s.roll, s]));
+      const prMap = Object.fromEntries(sheetResults["PR"].students.map(s => [s.roll, s]));
+      const thTotal = sheetResults["TH"].dates.length;
+      const prTotal = sheetResults["PR"].dates.length;
+
+      [...allRolls].sort((a, b) => +a - +b).forEach(roll => {
+        const thStudent = thMap[roll];
+        const prStudent = prMap[roll];
+        const name      = thStudent?.name || prStudent?.name || "";
+
+        const thPresent = thStudent ? sheetResults["TH"].dates.filter(d => thStudent.att[d]).length : 0;
+        const prPresent = prStudent ? sheetResults["PR"].dates.filter(d => prStudent.att[d]).length : 0;
+
+        const thPct  = thTotal ? ((thPresent / thTotal) * 100).toFixed(1) + "%" : "N/A";
+        const prPct  = prTotal ? ((prPresent / prTotal) * 100).toFixed(1) + "%" : "N/A";
+        const allPct = (thTotal + prTotal)
+          ? (((thPresent + prPresent) / (thTotal + prTotal)) * 100).toFixed(1) + "%"
+          : "N/A";
+
+        summaryWs.addRow([roll, name, thPresent, thTotal, thPct, prPresent, prTotal, prPct, allPct]);
+      });
+    }
 
     res.setHeader("Content-Disposition",
       `attachment; filename=${subject.code}_${subject.divisionName}_Y${subject.year}S${subject.semester}.xlsx`);
     await wb.xlsx.write(res);
     res.end();
-  } catch (e) { res.status(500).send("Export failed."); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Export failed.");
+  }
 });
 
 /* ── Start ── */

@@ -1,368 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>QR Attendance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0d0d0d" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="QR Attend" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#07070d"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AttendQR"/>
+<title>AttendQR — Student Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-  <style>
-    :root {
-      --bg: #0d0d0d;
-      --surface: #171717;
-      --surface-hover: #1e1e1e;
-      --border: 1px solid #2a2a2a;
-      --ink: #f0f0ee;
-      --ink-muted: #6b6b6b;
-      --ink-faint: #333333;
-      --ok: #4ade80;
-      --ok-bg: #0d1f14;
-      --ok-border: #1a3d26;
-      --err: #f87171;
-      --err-bg: #1f0d0d;
-      --err-border: #3d1a1a;
-      --radius: 10px;
-    }
+:root{
+  --bg:#07070d;
+  --surface:#0f0f1a;
+  --card:#161620;
+  --border:#2a2a3d;
+  --accent:#7c6aff;
+  --accent2:#ff6a9b;
+  --text:#e8e8f0;
+  --muted:#6b6b85;
+  --success:#4ade80;
+  --warn:#fbbf24;
+  --danger:#f87171;
+  --radius:16px;
+}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body{height:100%}
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 40px 20px 80px;
-    }
+body{
+  font-family:'Syne',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow-x:hidden;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
 
-    .shell { width: 100%; max-width: 420px; }
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(124,106,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(124,106,255,.04) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;z-index:0;
+}
 
-    /* ── Header ── */
-    .header {
-      margin-bottom: 28px;
-      padding-bottom: 20px;
-      border-bottom: var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .header-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      margin-bottom: 5px;
-    }
-    .header h1 {
-      font-size: 21px;
-      font-weight: 300;
-      color: var(--ink);
-      letter-spacing: -0.03em;
-    }
-    .header-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #2a2a2a;
-      flex-shrink: 0;
-      transition: background 0.4s;
-    }
+body::after{
+  content:'';
+  position:fixed;
+  top:-40%;right:-20%;
+  width:60vw;height:60vw;
+  background:radial-gradient(circle,rgba(255,106,155,.06) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+  animation:pulseGlow 9s ease-in-out infinite alternate;
+}
 
-    /* ── Student pill ── */
-    #studentInfo {
-      display: none;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--ink-muted);
-      background: var(--surface);
-      border: var(--border);
-      border-radius: 100px;
-      padding: 7px 14px;
-      margin-bottom: 16px;
-      width: fit-content;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-    }
+@keyframes pulseGlow{from{opacity:.4;transform:scale(1)}to{opacity:1;transform:scale(1.1)}}
 
-    /* ── Sections ── */
-    .section {
-      background: var(--surface);
-      border: var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      margin-bottom: 8px;
-    }
-    .section-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      margin-bottom: 14px;
-    }
+.wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:460px;
+  padding:1.5rem 1.25rem;
+  display:flex;flex-direction:column;gap:1rem;
+  flex:1;
+}
 
-    /* ── Inputs ── */
-    input, select {
-      width: 100%;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 400;
-      background: #111111;
-      color: var(--ink);
-      border: var(--border);
-      border-radius: 8px;
-      outline: none;
-      transition: border-color 0.15s, background 0.15s;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-    }
-    input + input { margin-top: 8px; }
-    input::placeholder { color: #3d3d3d; }
-    input:focus { border-color: #444; background: #141414; }
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      padding-right: 40px;
-      cursor: pointer;
-    }
-    select:focus { border-color: #444; background-color: #141414; }
-    select option { background: #1a1a1a; color: var(--ink); }
+/* ── Header ── */
+.top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:.75rem;
+  border-bottom:1px solid var(--border);
+}
+.logo-row{display:flex;align-items:center;gap:.6rem}
+.logo-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+}
+.logo-text{font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.logo-sub{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
 
-    /* ── Buttons ── */
-    .btn {
-      width: 100%;
-      padding: 12px 14px;
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 500;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s, opacity 0.15s, transform 0.1s;
-      border: none;
-      letter-spacing: 0.01em;
-      touch-action: manipulation;
-    }
-    .btn:active { opacity: 0.65; transform: scale(0.985); }
-    .btn-primary { background: var(--ink); color: #0d0d0d; margin-top: 14px; }
-    .btn-primary:hover { background: #d8d8d6; }
-    .btn-outline {
-      background: transparent;
-      color: var(--ink-muted);
-      border: var(--border);
-      margin-top: 0;
-    }
-    .btn-outline:hover { background: var(--surface-hover); color: var(--ink); }
+.date-chip{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:.3rem .75rem;white-space:nowrap;
+}
 
-    /* ── Camera controls row ── */
-    .camera-controls {
-      display: flex;
-      gap: 8px;
-      margin-top: 14px;
-    }
-    .camera-controls .btn-primary { margin-top: 0; flex: 1; }
-    .camera-controls .btn-outline { flex: 0 0 auto; width: auto; padding: 12px 18px; }
+/* ── Cards ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem;
+  animation:slideUp .45s cubic-bezier(.16,1,.3,1) both;
+}
 
-    /* ── Scanner area ── */
-    #reader {
-      border-radius: 8px;
-      overflow: hidden;
-      background: #111;
-      border: var(--border);
-      min-height: 220px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #reader-placeholder {
-      text-align: center;
-      color: #2e2e2e;
-      font-size: 13px;
-      line-height: 1.8;
-      padding: 24px;
-    }
-    #reader-placeholder svg { display: block; margin: 0 auto 12px; }
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-    /* ── Status ── */
-    #status { margin-top: 10px; }
-    .msg {
-      padding: 12px 15px;
-      border-radius: 8px;
-      font-size: 13.5px;
-      line-height: 1.5;
-    }
-    .msg-ok  { color: var(--ok);  background: var(--ok-bg);  border: 1px solid var(--ok-border); }
-    .msg-err { color: var(--err); background: var(--err-bg); border: 1px solid var(--err-border); }
+.card-label{
+  font-size:.65rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:.9rem;display:flex;align-items:center;gap:.4rem;
+}
+.card-label .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);opacity:.6;
+}
 
-    /* ── Install modal ── */
-    #install-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      z-index: 200;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 0 16px 32px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.22s ease;
-    }
-    #install-overlay.visible {
-      opacity: 1;
-      pointer-events: all;
-    }
-    .install-modal {
-      width: 100%;
-      max-width: 420px;
-      background: #181818;
-      border: 1px solid #262626;
-      border-radius: 20px;
-      padding: 28px 24px 22px;
-      transform: translateY(28px);
-      transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
-      box-shadow: 0 32px 80px rgba(0,0,0,0.75);
-    }
-    #install-overlay.visible .install-modal {
-      transform: translateY(0);
-    }
-    .install-modal-icon {
-      width: 50px; height: 50px;
-      background: #111;
-      border: 1px solid #272727;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .install-modal-title {
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--ink);
-      letter-spacing: -0.025em;
-      margin-bottom: 8px;
-    }
-    .install-modal-body {
-      font-size: 13.5px;
-      color: var(--ink-muted);
-      line-height: 1.7;
-      margin-bottom: 26px;
-    }
-    .install-modal-body code {
-      font-family: 'DM Mono', monospace;
-      font-size: 11.5px;
-      color: #505050;
-      background: #111;
-      padding: 2px 6px;
-      border-radius: 4px;
-      border: 1px solid #242424;
-    }
-    .install-modal-actions { display: flex; flex-direction: column; gap: 6px; }
-    .im-btn {
-      width: 100%;
-      padding: 13px;
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 500;
-      border-radius: 11px;
-      cursor: pointer;
-      border: none;
-      touch-action: manipulation;
-      transition: opacity 0.15s, transform 0.1s;
-      letter-spacing: 0.005em;
-    }
-    .im-btn:active { opacity: 0.6; transform: scale(0.984); }
-    .im-btn-primary { background: var(--ink); color: #0d0d0d; }
-    .im-btn-primary:hover { background: #d8d8d6; }
-    .im-btn-ghost {
-      background: transparent;
-      color: var(--ink-muted);
-      font-size: 13px;
-      font-weight: 400;
-    }
+/* ── Student pill ── */
+.student-pill{
+  display:flex;align-items:center;gap:.75rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:50px;padding:.55rem 1rem .55rem .55rem;
+  cursor:pointer;transition:border-color .2s,background .2s;
+  animation:slideUp .4s cubic-bezier(.16,1,.3,1) both;
+}
+.student-pill:hover{border-color:var(--accent);background:rgba(124,106,255,.06)}
 
-    @media (max-width: 360px) {
-      body { padding: 24px 14px 72px; }
-      .header h1 { font-size: 19px; }
-    }
-    @supports (-webkit-touch-callout: none) {
-      input, select, .btn { font-size: 16px; }
-      #install-overlay { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
-    }
-  </style>
+.s-avatar{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;flex-shrink:0;
+}
+.s-info{flex:1;min-width:0}
+.s-name{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-roll{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.s-edit{font-size:.65rem;color:var(--muted);flex-shrink:0;font-family:'JetBrains Mono',monospace}
+
+/* ── Inputs ── */
+.field{margin-bottom:.85rem}
+.field:last-of-type{margin-bottom:0}
+
+label{
+  display:block;font-size:.68rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.1em;
+  margin-bottom:.45rem;
+}
+
+input{
+  width:100%;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;
+  padding:.7rem 1rem;color:var(--text);
+  font-family:'Syne',sans-serif;font-size:.9rem;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+input::placeholder{color:var(--muted);opacity:.5}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,255,.12)}
+
+/* ── Buttons ── */
+.btn{
+  width:100%;padding:.8rem;border:none;border-radius:10px;
+  font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;
+  cursor:pointer;transition:all .2s;letter-spacing:.02em;
+  touch-action:manipulation;
+}
+.btn:active{transform:scale(.97);opacity:.85}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#5b4fd4);
+  color:#fff;margin-top:.9rem;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,106,255,.3)}
+
+.btn-outline{
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-size:.8rem;padding:.6rem;margin-top:.5rem;
+}
+.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+
+/* ── Camera area ── */
+.camera-shell{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  position:relative;min-height:240px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+#qr-reader{width:100%}
+
+/* Override html5-qrcode default styles */
+#qr-reader video{border-radius:0!important}
+#qr-reader img{display:none!important}
+#qr-reader__scan_region{border:none!important;background:transparent!important}
+#qr-reader__header_message,#qr-reader__status_span,
+#qr-reader__camera_selection,#qr-reader__camera_permission_button,
+#qr-reader__filescan_input{display:none!important}
+#qr-reader__dashboard{display:none!important}
+
+.camera-placeholder{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.75rem;padding:2.5rem;
+  text-align:center;
+}
+.cam-icon{
+  width:56px;height:56px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+}
+.cam-text{font-size:.8rem;color:var(--muted);line-height:1.6}
+
+/* Scanning overlay */
+.scan-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  display:none;
+}
+.scan-overlay.active{display:block}
+.scan-line{
+  position:absolute;left:12%;width:76%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation:scanMove 2s ease-in-out infinite;
+  box-shadow:0 0 12px var(--accent);
+}
+@keyframes scanMove{0%{top:20%}50%{top:75%}100%{top:20%}}
+
+.scan-corners{position:absolute;inset:12%}
+.sc{position:absolute;width:22px;height:22px}
+.sc::before,.sc::after{content:'';position:absolute;background:var(--accent);border-radius:1px}
+.sc.tl{top:0;left:0}.sc.tl::before{top:0;left:0;width:100%;height:2px}.sc.tl::after{top:0;left:0;width:2px;height:100%}
+.sc.tr{top:0;right:0}.sc.tr::before{top:0;right:0;width:100%;height:2px}.sc.tr::after{top:0;right:0;width:2px;height:100%}
+.sc.bl{bottom:0;left:0}.sc.bl::before{bottom:0;left:0;width:100%;height:2px}.sc.bl::after{bottom:0;left:0;width:2px;height:100%}
+.sc.br{bottom:0;right:0}.sc.br::before{bottom:0;right:0;width:100%;height:2px}.sc.br::after{bottom:0;right:0;width:2px;height:100%}
+
+/* ── Camera controls ── */
+.cam-controls{display:flex;gap:.6rem;margin-top:.75rem}
+.cam-controls .btn-primary{margin-top:0;flex:1}
+.btn-stop{
+  flex:0 0 auto;width:auto;padding:.7rem 1.1rem;
+  background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);
+  color:var(--danger);font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;
+  border-radius:10px;cursor:pointer;transition:all .2s;
+  touch-action:manipulation;display:none;
+}
+.btn-stop:hover{background:rgba(248,113,113,.2)}
+
+/* ── Status ── */
+.status-box{
+  border-radius:10px;padding:.75rem 1rem;
+  font-size:.83rem;line-height:1.55;
+  display:none;margin-top:.75rem;
+}
+.status-box.ok{
+  background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);
+  color:var(--success);
+}
+.status-box.err{
+  background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);
+  color:var(--danger);
+}
+.status-box.loading{
+  background:rgba(124,106,255,.08);border:1px solid rgba(124,106,255,.2);
+  color:var(--accent);display:flex;align-items:center;gap:.6rem;
+}
+.spin{
+  width:14px;height:14px;border:2px solid rgba(124,106,255,.3);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .65s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Success flash ── */
+.success-flash{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(74,222,128,.07);
+  display:none;pointer-events:none;
+  animation:flash .6s ease-out both;
+}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+
+/* ── Last scan info ── */
+.scan-info{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:.75rem 1rem;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  color:var(--muted);line-height:1.7;margin-top:.6rem;
+  word-break:break-all;display:none;
+}
+.scan-info span{color:var(--text);font-weight:500}
+
+/* ── Install modal ── */
+#install-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  z-index:200;display:flex;align-items:flex-end;justify-content:center;
+  padding:0 1rem max(2rem,env(safe-area-inset-bottom));
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+#install-overlay.visible{opacity:1;pointer-events:all}
+.install-modal{
+  width:100%;max-width:460px;
+  background:#181826;border:1px solid var(--border);
+  border-radius:20px;padding:1.75rem 1.5rem 1.25rem;
+  transform:translateY(24px);
+  transition:transform .3s cubic-bezier(.34,1.2,.64,1);
+  box-shadow:0 32px 80px rgba(0,0,0,.75);
+}
+#install-overlay.visible .install-modal{transform:translateY(0)}
+.im-icon{
+  width:46px;height:46px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;margin-bottom:1rem;
+}
+.im-title{font-size:1rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.02em}
+.im-body{font-size:.8rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem}
+.im-body code{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  background:var(--surface);padding:1px 5px;border-radius:4px;
+  border:1px solid var(--border);color:var(--text);
+}
+.im-actions{display:flex;flex-direction:column;gap:.5rem}
+.im-btn{
+  width:100%;padding:.8rem;font-family:'Syne',sans-serif;
+  font-size:.88rem;font-weight:700;border-radius:10px;
+  cursor:pointer;border:none;transition:all .15s;touch-action:manipulation;
+}
+.im-btn:active{opacity:.65;transform:scale(.985)}
+.im-primary{background:linear-gradient(135deg,var(--accent),#5b4fd4);color:#fff}
+.im-ghost{background:transparent;color:var(--muted);font-size:.8rem;font-weight:400}
+
+@media(max-width:360px){
+  .wrap{padding:1rem}
+  input,.btn{font-size:16px}
+}
+</style>
 </head>
-
 <body>
-<div class="shell">
 
-  <div class="header">
-    <div>
-      <p class="header-label">Attendance System</p>
-      <h1>QR Scanner</h1>
+<div class="success-flash" id="flashEl"></div>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="top-bar">
+    <div class="logo-row">
+      <div class="logo-icon">📋</div>
+      <div>
+        <div class="logo-text">AttendQR</div>
+        <div class="logo-sub">STUDENT SCANNER</div>
+      </div>
     </div>
-    <div class="header-dot" id="statusDot"></div>
+    <div class="date-chip" id="dateChip"></div>
   </div>
 
-  <!-- Shows saved student info — tap to edit -->
-  <div id="studentInfo" onclick="editStudent()"></div>
+  <!-- Student pill (shown when saved) -->
+  <div class="student-pill" id="studentPill" style="display:none;" onclick="editStudent()">
+    <div class="s-avatar" id="pillAvatar"></div>
+    <div class="s-info">
+      <div class="s-name" id="pillName"></div>
+      <div class="s-roll" id="pillRoll"></div>
+    </div>
+    <div class="s-edit">✎ edit</div>
+  </div>
 
-  <!-- Student details -->
-  <div class="section" id="studentBox" style="display:none;">
-    <p class="section-label">Your Details</p>
-    <input type="text" id="roll" placeholder="Roll Number" />
-    <input type="text" id="name" placeholder="Full Name" />
-    <button class="btn btn-primary" onclick="saveStudent()">Save</button>
+  <!-- Student details form -->
+  <div class="card" id="studentCard">
+    <div class="card-label"><span class="dot"></span>Your Details</div>
+    <div class="field">
+      <label>Roll Number</label>
+      <input type="text" id="rollInput" placeholder="e.g. 22CS01" autocomplete="off" inputmode="text"/>
+    </div>
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="nameInput" placeholder="e.g. Aryan Deshmukh" autocomplete="name"/>
+    </div>
+    <button class="btn btn-primary" onclick="saveStudent()">Save Details →</button>
   </div>
 
   <!-- Scanner -->
-  <div class="section">
-    <p class="section-label">Camera</p>
-    <div id="reader">
-      <div id="reader-placeholder">
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="3" y="3" width="7" height="7" rx="1.2"/>
-          <rect x="14" y="3" width="7" height="7" rx="1.2"/>
-          <rect x="3" y="14" width="7" height="7" rx="1.2"/>
-          <rect x="14" y="14" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="18.5" y="14" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="14" y="18.5" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.4"/>
-        </svg>
-        Tap to open camera
+  <div class="card" style="animation-delay:.08s">
+    <div class="card-label"><span class="dot" style="background:var(--accent2)"></span>QR Scanner</div>
+
+    <div class="camera-shell" id="cameraShell">
+      <div id="qr-reader"></div>
+      <div id="cameraPlaceholder" class="camera-placeholder">
+        <div class="cam-icon">📷</div>
+        <div class="cam-text">Point your camera at the<br/>attendance QR code</div>
+      </div>
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-line"></div>
+        <div class="scan-corners">
+          <div class="sc tl"></div><div class="sc tr"></div>
+          <div class="sc bl"></div><div class="sc br"></div>
+        </div>
       </div>
     </div>
 
-    <div class="camera-controls">
-      <button class="btn btn-primary" id="startBtn" onclick="startScanner()">Start Camera</button>
-      <button class="btn btn-outline" id="stopBtn" onclick="stopScanner()" style="display:none;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-2px;margin-right:5px;"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-        Stop
-      </button>
+    <div class="cam-controls">
+      <button class="btn btn-primary" id="startBtn" onclick="startScanner()">▶ Start Camera</button>
+      <button class="btn-stop" id="stopBtn" onclick="stopScanner()">■ Stop</button>
     </div>
-    <div id="status"></div>
-  </div>
 
-  <!-- Subject — loaded dynamically from API -->
-  <div class="section">
-    <p class="section-label">Subject</p>
-    <select id="subject">
-      <option value="">Loading subjects…</option>
-    </select>
+    <div class="status-box" id="statusBox"></div>
+    <div class="scan-info" id="scanInfo"></div>
   </div>
 
 </div>
@@ -370,264 +408,292 @@
 <!-- Install modal -->
 <div id="install-overlay" onclick="handleOverlayClick(event)">
   <div class="install-modal">
-    <div class="install-modal-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c0c0be" stroke-width="1.4">
-        <rect x="3" y="3" width="7" height="7" rx="1.1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1.1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.1"/>
-        <rect x="14.5" y="14.5" width="2" height="2" rx="0.3"/>
-        <rect x="18.5" y="14.5" width="2" height="2" rx="0.3"/>
-        <rect x="14.5" y="18.5" width="2" height="2" rx="0.3"/>
-        <rect x="18.5" y="18.5" width="2" height="2" rx="0.3"/>
-      </svg>
+    <div class="im-icon">📋</div>
+    <div class="im-title">Add to Home Screen</div>
+    <div class="im-body" id="imBody">
+      Install AttendQR for instant one-tap access — no browser bar, no extra steps.
     </div>
-    <div class="install-modal-title">Add to Home Screen</div>
-    <div class="install-modal-body" id="install-modal-body">
-      Install QR Attendance for instant one-tap access — no browser bar, no extra steps.
-    </div>
-    <div class="install-modal-actions">
-      <button class="im-btn im-btn-primary" id="installBtn" onclick="triggerInstall()">Install</button>
-      <button class="im-btn im-btn-ghost" onclick="dismissInstall()">Not now</button>
+    <div class="im-actions">
+      <button class="im-btn im-primary" id="installBtn" onclick="triggerInstall()">Install App</button>
+      <button class="im-btn im-ghost" onclick="dismissInstall()">Not now</button>
     </div>
   </div>
 </div>
 
 <script>
-  // Nuke any cached subject that isn't a 24-char MongoDB ObjectId
-const _cached = localStorage.getItem("selectedSubject");
-if (_cached && !/^[a-f\d]{24}$/i.test(_cached)) {
-  console.warn("Clearing bad cached subject:", _cached);
-  localStorage.removeItem("selectedSubject");
+const API_BASE = "https://attendance-version-1.vercel.app";
+// ── Date chip ──
+document.getElementById('dateChip').textContent = new Date().toLocaleDateString('en-IN',{
+  weekday:'short',day:'numeric',month:'short',year:'numeric'
+});
+
+// ── Student state ──
+function loadStudent() {
+  const roll = localStorage.getItem('roll');
+  const name = localStorage.getItem('name');
+  if (roll && name) {
+    document.getElementById('studentPill').style.display = 'flex';
+    document.getElementById('studentCard').style.display = 'none';
+    document.getElementById('pillName').textContent = name;
+    document.getElementById('pillRoll').textContent = roll;
+    document.getElementById('pillAvatar').textContent = name.charAt(0).toUpperCase();
+  } else {
+    document.getElementById('studentPill').style.display = 'none';
+    document.getElementById('studentCard').style.display = 'block';
+    document.getElementById('rollInput').value = '';
+    document.getElementById('nameInput').value = '';
+  }
 }
-  const API_BASE = "https://attendance-version-1.vercel.app";
-  const TOKEN_PREFIX = "COLLEGE_QR_";
-  const TOKEN_INTERVAL = 30;
 
-  function expectedToken() {
-    return TOKEN_PREFIX + Math.floor(Date.now() / 1000 / TOKEN_INTERVAL);
-  }
-
-  let html5QrCode, scanning = false;
-  let deferredPrompt = null;
-
-  // ── PWA install ──
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!localStorage.getItem('installDismissed')) {
-      setTimeout(showInstall, 2000);
-    }
-  });
-
-  function showInstall() {
-    document.getElementById('install-overlay').classList.add('visible');
-  }
-  function dismissInstall() {
-    document.getElementById('install-overlay').classList.remove('visible');
-    localStorage.setItem('installDismissed', '1');
-  }
-  function handleOverlayClick(e) {
-    if (e.target === document.getElementById('install-overlay')) dismissInstall();
-  }
-  async function triggerInstall() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    dismissInstall();
-  }
-  window.addEventListener('appinstalled', dismissInstall);
-
-  // iOS
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
-    setTimeout(() => {
-      document.getElementById('install-modal-body').innerHTML =
-        'Tap the <code>Share</code> icon in Safari, then select <code>Add to Home Screen</code>.';
-      document.getElementById('installBtn').style.display = 'none';
-      showInstall();
-    }, 2000);
-  }
-
-  // ── Student ──
-  function loadStudent() {
-    const roll = localStorage.getItem("roll");
-    const name = localStorage.getItem("name");
-    const info = document.getElementById("studentInfo");
-    if (roll && name) {
-      info.style.display = "block";
-      info.innerText = `${roll}  ·  ${name}  · tap to edit`;
-      document.getElementById("studentBox").style.display = "none";
-    } else {
-      info.style.display = "none";
-      document.getElementById("studentBox").style.display = "block";
-    }
-  }
-
-  function editStudent() {
-    localStorage.removeItem("roll");
-    localStorage.removeItem("name");
-    loadStudent();
-  }
-
-  function saveStudent() {
-    const roll = document.getElementById("roll").value.trim();
-    const name = document.getElementById("name").value.trim();
-    if (!roll || !name) { alert("Please enter both roll number and name."); return; }
-    localStorage.setItem("roll", roll);
-    localStorage.setItem("name", name);
-    loadStudent();
-  }
-
-  // ── Subjects ──
-  async function loadSubjects() {
-    const select = document.getElementById("subject");
-    // Restore previously selected subject
-    const savedSubject = localStorage.getItem("selectedSubject");
-    try {
-      const res = await fetch(API_BASE + "/subjects/public");
-      if (!res.ok) throw new Error("Failed to load");
-      const subjects = await res.json();
-      select.innerHTML = '<option value="">Select subject…</option>';
-      subjects.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s._id;
-        opt.textContent = `${s.code} — ${s.name} (${s.divisionName} Y${s.year}S${s.semester} ${s.type})`;
-        if (savedSubject === s._id) opt.selected = true;
-        select.appendChild(opt);
-      });
-    } catch {
-      select.innerHTML = '<option value="">Failed to load — refresh to retry</option>';
-    }
-  }
-
-  // Save selected subject so it persists across sessions
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("subject").addEventListener("change", (e) => {
-      localStorage.setItem("selectedSubject", e.target.value);
-    });
-  });
-
-  // ── Status ──
-  function setStatus(msg, type) {
-    document.getElementById("status").innerHTML = `<div class="msg msg-${type}">${msg}</div>`;
-    document.getElementById("statusDot").style.background =
-      type === 'ok' ? '#4ade80' : type === 'err' ? '#f87171' : '#2a2a2a';
-  }
-  function clearStatus() {
-    document.getElementById("status").innerHTML = '';
-    document.getElementById("statusDot").style.background = '#2a2a2a';
-  }
-
-  // ── Scanner ──
-  function startScanner() {
-    const roll = localStorage.getItem("roll");
-    const name = localStorage.getItem("name");
-    if (!roll || !name) { alert("Save your details first."); return; }
-    const subjectId = document.getElementById("subject").value;
-    if (!subjectId) { alert("Please select a subject first."); return; }
-    if (scanning) return;
-
-    document.getElementById("reader").innerHTML = "";
-    clearStatus();
-    document.getElementById("startBtn").style.display = "none";
-    document.getElementById("stopBtn").style.display = "block";
-
-    html5QrCode = new Html5Qrcode("reader");
-    scanning = true;
-
-    html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 220 },
-      onScanSuccess
-    ).catch(() => {
-      scanning = false;
-      resetCameraUI();
-      setStatus("Camera permission denied or unavailable.", "err");
-    });
-  }
-
-  function stopScanner() {
-    if (!scanning) return;
-    html5QrCode.stop().then(() => {
-      scanning = false;
-      resetCameraUI();
-      clearStatus();
-    }).catch(() => { scanning = false; resetCameraUI(); });
-  }
-
-  function resetCameraUI() {
-    document.getElementById("startBtn").style.display = "block";
-    document.getElementById("stopBtn").style.display = "none";
-    document.getElementById("reader").innerHTML = `
-      <div id="reader-placeholder">
-        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="3" y="3" width="7" height="7" rx="1.2"/>
-          <rect x="14" y="3" width="7" height="7" rx="1.2"/>
-          <rect x="3" y="14" width="7" height="7" rx="1.2"/>
-          <rect x="14" y="14" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="18.5" y="14" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="14" y="18.5" width="2.5" height="2.5" rx="0.4"/>
-          <rect x="18.5" y="18.5" width="2.5" height="2.5" rx="0.4"/>
-        </svg>
-        Tap to open camera
-      </div>`;
-  }
-
-  function onScanSuccess(text) {
-    if (text === expectedToken()) {
-      setStatus("QR verified — marking attendance…", "ok");
-      html5QrCode.stop().then(() => {
-        scanning = false;
-        resetCameraUI();
-        markAttendance();
-      });
-    } else {
-      setStatus("Invalid or expired QR code.", "err");
-    }
-  }
-
-  async function markAttendance() {
-    const roll = localStorage.getItem("roll");
-    const name = localStorage.getItem("name");
-    const subjectId = document.getElementById("subject").value;
-    const cachedSubject = localStorage.getItem("selectedSubject");
-    
-    // Debug — shows exactly what is being sent
-    setStatus(`Sending: subjectId="${subjectId}" | cached="${cachedSubject}"`, "ok");
-    console.log("subjectId:", subjectId, "| cached:", cachedSubject);
-    
-    if (!subjectId) { setStatus("Please select a subject first.", "err"); return; }
-
-    try {
-      const res = await fetch(API_BASE + "/attendance/checkin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentRoll: roll,
-          studentName: name,
-          subjectId: subjectId,
-          date: new Date().toISOString().split("T")[0]
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setStatus(data.error || "Failed to record attendance.", "err");
-        return;
-      }
-      setStatus("Attendance recorded successfully.", "ok");
-    } catch (err) {
-      setStatus("Server unreachable. Try again. (" + err.message + ")", "err");
-    }
-  }
-
+function saveStudent() {
+  const roll = document.getElementById('rollInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  if (!roll || !name) { showStatus('Please enter both roll number and name.', 'err'); return; }
+  localStorage.setItem('roll', roll);
+  localStorage.setItem('name', name);
   loadStudent();
-  loadSubjects();
+  clearStatus();
+}
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+function editStudent() {
+  localStorage.removeItem('roll');
+  localStorage.removeItem('name');
+  loadStudent();
+  if (scanning) stopScanner();
+}
+
+// ── Scanner ──
+let html5QrCode = null;
+let scanning = false;
+let lastScanned = '';
+let cooldown = false;
+
+function startScanner() {
+  const roll = localStorage.getItem('roll');
+  const name = localStorage.getItem('name');
+  if (!roll || !name) {
+    showStatus('Save your details first before scanning.', 'err');
+    // Scroll to student card
+    document.getElementById('studentCard').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('rollInput').focus();
+    return;
   }
+  if (scanning) return;
+
+  clearStatus();
+  document.getElementById('cameraPlaceholder').style.display = 'none';
+  document.getElementById('scanOverlay').classList.add('active');
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'block';
+
+  html5QrCode = new Html5Qrcode('qr-reader');
+  scanning = true;
+
+  const config = {
+    fps: 12,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0,
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  };
+
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    config,
+    onScanSuccess
+  ).catch(err => {
+    scanning = false;
+    resetCameraUI();
+    showStatus('Camera permission denied or unavailable. Please allow camera access.', 'err');
+  });
+}
+
+function stopScanner() {
+  if (!scanning || !html5QrCode) return;
+  html5QrCode.stop().then(() => {
+    scanning = false;
+    html5QrCode = null;
+    resetCameraUI();
+    clearStatus();
+  }).catch(() => {
+    scanning = false;
+    html5QrCode = null;
+    resetCameraUI();
+  });
+}
+
+function resetCameraUI() {
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('scanOverlay').classList.remove('active');
+  document.getElementById('startBtn').style.display = 'block';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+async function onScanSuccess(decodedText) {
+  if (cooldown || decodedText === lastScanned) return;
+  cooldown = true;
+  lastScanned = decodedText;
+  setTimeout(() => { cooldown = false; }, 3000);
+
+  // Parse the URL from the QR
+  let subjectId, lectureType, date;
+  try {
+    // Support both full URL and bare params
+    let url;
+    if (decodedText.startsWith('http')) {
+      url = new URL(decodedText);
+    } else {
+      url = new URL('https://x.x?' + decodedText);
+    }
+    subjectId   = url.searchParams.get('subjectId');
+    lectureType = url.searchParams.get('lectureType') || 'TH';
+    date        = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+  } catch {
+    showStatus('Invalid QR code. Please scan the correct attendance QR.', 'err');
+    return;
+  }
+
+  if (!subjectId) {
+    showStatus('QR code is missing subject information. Ask your teacher to regenerate.', 'err');
+    return;
+  }
+
+  // Stop scanner, mark attendance
+  html5QrCode.stop().then(() => {
+    scanning = false;
+    html5QrCode = null;
+    resetCameraUI();
+  }).catch(() => {
+    scanning = false;
+    html5QrCode = null;
+    resetCameraUI();
+  });
+
+  showScanInfo(subjectId, lectureType, date);
+  await markAttendance(subjectId, lectureType, date);
+}
+
+async function markAttendance(subjectId, lectureType, date) {
+  const roll = localStorage.getItem('roll');
+  const name = localStorage.getItem('name');
+
+  showStatus('Marking attendance…', 'loading');
+
+  try {
+    const res = await fetch(API_BASE + '/attendance/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentRoll: roll,
+        studentName: name,
+        subjectId,
+        lectureType,
+        date
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showStatus('❌ ' + (data.error || 'Failed to record attendance.'), 'err');
+      return;
+    }
+
+    // Success!
+    triggerSuccessFlash();
+    const ltLabel = data.lectureType === 'PR' ? 'Practical' : 'Theory';
+    showStatus(`✅ Attendance recorded! &nbsp;<span style="opacity:.7;font-size:.75rem;font-family:'JetBrains Mono',monospace">${ltLabel} · ${date}</span>`, 'ok');
+
+  } catch (err) {
+    showStatus('⚠️ Could not reach server. Check your connection.', 'err');
+  }
+}
+
+// ── UI helpers ──
+function showStatus(msg, type) {
+  const el = document.getElementById('statusBox');
+  el.style.display = type === 'loading' ? 'flex' : 'block';
+  el.className = 'status-box ' + type;
+  if (type === 'loading') {
+    el.innerHTML = `<div class="spin"></div>${msg}`;
+  } else {
+    el.innerHTML = msg;
+  }
+}
+
+function clearStatus() {
+  const el = document.getElementById('statusBox');
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+
+function showScanInfo(subjectId, lectureType, date) {
+  const el = document.getElementById('scanInfo');
+  el.style.display = 'block';
+  el.innerHTML = `
+    subject&nbsp;&nbsp;→ <span>${subjectId}</span><br>
+    type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ <span>${lectureType}</span><br>
+    date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ <span>${date}</span>
+  `;
+}
+
+function triggerSuccessFlash() {
+  const el = document.getElementById('flashEl');
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'flash .6s ease-out both';
+  setTimeout(() => { el.style.display = 'none'; }, 700);
+}
+
+// ── PWA install ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('installDismissed')) setTimeout(showInstall, 2500);
+});
+function showInstall() { document.getElementById('install-overlay').classList.add('visible'); }
+function dismissInstall() {
+  document.getElementById('install-overlay').classList.remove('visible');
+  localStorage.setItem('installDismissed', '1');
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('install-overlay')) dismissInstall();
+}
+async function triggerInstall() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  dismissInstall();
+}
+window.addEventListener('appinstalled', dismissInstall);
+
+// iOS
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode:standalone)').matches || navigator.standalone === true;
+if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+  setTimeout(() => {
+    document.getElementById('imBody').innerHTML =
+      'Tap the <code>Share</code> icon in Safari, then select <code>Add to Home Screen</code>.';
+    document.getElementById('installBtn').style.display = 'none';
+    showInstall();
+  }, 2500);
+}
+
+// ── Init ──
+loadStudent();
+
+document.getElementById('rollInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('nameInput').focus();
+});
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveStudent();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
