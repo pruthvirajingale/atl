@@ -13,11 +13,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:pCl4w3q7micwHpkf@cluster99.apwbb2y.mongodb.net/")
-  .then(() => console.log("MongoDB connected"))
-  .catch(console.error);
-
-/* ── Models ── */
+async function connectDB() {
+  if (isConnected) return;
+  await mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:pCl4w3q7micwHpkf@cluster99.apwbb2y.mongodb.net/", {
+    serverSelectionTimeoutMS: 5000,
+    bufferCommands: false,
+  });
+  isConnected = true;
+}
 
 const User = mongoose.model("User", new mongoose.Schema({
   name:     { type: String, required: true },
