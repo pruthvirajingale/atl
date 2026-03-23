@@ -13,14 +13,35 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+/* ── Database Connection ── */
+
+let isConnected = false;
+
 async function connectDB() {
   if (isConnected) return;
-  await mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:0hHU1IpFmdRXiJsP@cluster99.apwbb2y.mongodb.net/", {
+  if (mongoose.connection.readyState >= 1) {
+    isConnected = true;
+    return;
+  }
+  await mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://ingalepruthviraj50_db_user:iHKXlcgpv9DLG1xS@cluster99.apwbb2y.mongodb.net/", {
     serverSelectionTimeoutMS: 5000,
     bufferCommands: false,
   });
   isConnected = true;
 }
+
+// Connect to DB on every request (required for Vercel serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection error:", err);
+    res.status(500).json({ error: "Database connection failed." });
+  }
+});
+
+/* ── Models ── */
 
 const User = mongoose.model("User", new mongoose.Schema({
   name:     { type: String, required: true },
@@ -56,7 +77,7 @@ const Subject = mongoose.model("Subject", new mongoose.Schema({
   teacherId:    { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
 }));
 
-const Attendance = mongoose.model("Attendance", new mongoose.Schema({
+const attendanceSchema = new mongoose.Schema({
   studentRoll:  { type: String, required: true },
   studentName:  { type: String, required: true },
   subjectId:    { type: mongoose.Schema.Types.ObjectId, ref: "Subject", required: true },
@@ -65,15 +86,13 @@ const Attendance = mongoose.model("Attendance", new mongoose.Schema({
   year:         Number,
   semester:     Number,
   date:         { type: String, required: true },
-  // NEW: Track whether this record is for Theory (TH) or Practical (PR)
-  // Defaults to "TH" for backward compatibility with existing records
   lectureType:  { type: String, enum: ["TH", "PR"], default: "TH" },
   markedBy:     { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
-}));
+});
 
-// Updated unique index now includes lectureType so a student can have both
-// a TH and a PR record for the same subject on the same date
-Attendance.schema.index({ studentRoll: 1, subjectId: 1, date: 1, lectureType: 1 }, { unique: true });
+attendanceSchema.index({ studentRoll: 1, subjectId: 1, date: 1, lectureType: 1 }, { unique: true });
+
+const Attendance = mongoose.model("Attendance", attendanceSchema);
 
 /* ── Middleware ── */
 
@@ -117,23 +136,13 @@ function fmtDate(iso) {
   return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]} ${y.slice(2)}`;
 }
 
-/**
- * Validate that a given lectureType is compatible with the subject's type.
- * e.g. you cannot mark "PR" attendance for a "TH"-only subject.
- */
-function validateLectureType(subjectType, lectureType) {
-  if (subjectType === "TH" && lectureType === "PR")
-    return "Cannot mark Practical attendance for a Theory-only subject.";
-  if (subjectType === "PR" && lectureType === "TH")
-    return "Cannot mark Theory attendance for a Practical-only subject.";
-  return null; // valid
-}
-
 /* ── Auth ── */
 
 app.get("/auth/check-admin", async (req, res) => {
-  const exists = await User.exists({ role: "admin" });
-  res.json({ exists: !!exists });
+  try {
+    const exists = await User.exists({ role: "admin" });
+    res.json({ exists: !!exists });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/auth/signup", async (req, res) => {
@@ -159,12 +168,14 @@ app.post("/auth/login", async (req, res) => {
 /* ── Users (admin) ── */
 
 app.get("/users", auth("admin", "hod"), async (req, res) => {
-  const filter = {};
-  if (req.query.role)         filter.role = req.query.role;
-  if (req.user.role === "hod") filter.departmentId = req.user.departmentId;
-  else if (req.query.departmentId) filter.departmentId = req.query.departmentId;
-  const users = await User.find(filter, "-password").lean();
-  res.json(users);
+  try {
+    const filter = {};
+    if (req.query.role)         filter.role = req.query.role;
+    if (req.user.role === "hod") filter.departmentId = req.user.departmentId;
+    else if (req.query.departmentId) filter.departmentId = req.query.departmentId;
+    const users = await User.find(filter, "-password").lean();
+    res.json(users);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/users", auth("admin", "hod"), async (req, res) => {
@@ -181,29 +192,37 @@ app.post("/users", auth("admin", "hod"), async (req, res) => {
 });
 
 app.patch("/users/:id", auth("admin"), async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, select: "-password" });
-  res.json(user);
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, select: "-password" });
+    res.json(user);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/users/:id", auth("admin", "hod"), async (req, res) => {
-  const user = await User.findById(req.params.id);
-  if (!user) return res.status(404).json({ error: "User not found." });
-  if (req.user.role === "hod" && user.departmentId?.toString() !== req.user.departmentId?.toString())
-    return res.status(403).json({ error: "Access denied." });
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted." });
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found." });
+    if (req.user.role === "hod" && user.departmentId?.toString() !== req.user.departmentId?.toString())
+      return res.status(403).json({ error: "Access denied." });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted." });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 /* ── Departments (admin) ── */
 
 app.get("/departments", auth(), async (req, res) => {
-  const depts = await Department.find().populate("hodId", "name email").lean();
-  res.json(depts);
+  try {
+    const depts = await Department.find().populate("hodId", "name email").lean();
+    res.json(depts);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get("/departments/:id", auth(), async (req, res) => {
-  const dept = await Department.findById(req.params.id).populate("hodId", "name email").lean();
-  res.json(dept);
+  try {
+    const dept = await Department.findById(req.params.id).populate("hodId", "name email").lean();
+    res.json(dept);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/departments", auth("admin"), async (req, res) => {
@@ -215,19 +234,22 @@ app.post("/departments", auth("admin"), async (req, res) => {
 });
 
 app.patch("/departments/:id", auth("admin"), async (req, res) => {
-  const dept = await Department.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (req.body.hodId) await User.findByIdAndUpdate(req.body.hodId, { departmentId: dept._id });
-  res.json(dept);
+  try {
+    const dept = await Department.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (req.body.hodId) await User.findByIdAndUpdate(req.body.hodId, { departmentId: dept._id });
+    res.json(dept);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/departments/:id", auth("admin"), async (req, res) => {
-  await Department.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted." });
+  try {
+    await Department.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted." });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 /* ── Subjects ── */
 
-// Public: get subjects for student scanner (no auth required)
 app.get("/subjects/public", async (req, res) => {
   try {
     const subjects = await Subject.find({})
@@ -239,17 +261,19 @@ app.get("/subjects/public", async (req, res) => {
 });
 
 app.get("/subjects", auth(), async (req, res) => {
-  const f = {};
-  if (req.user.role === "hod") f.departmentId = req.user.departmentId;
-  else if (req.user.role === "subject_teacher")
-    f._id = { $in: (req.user.assignedSubjects || []).map(a => a.subjectId) };
-  else if (req.query.departmentId) f.departmentId = req.query.departmentId;
-  if (req.query.year)       f.year       = +req.query.year;
-  if (req.query.semester)   f.semester   = +req.query.semester;
-  if (req.query.divisionId) f.divisionId = req.query.divisionId;
-  if (req.query.teacherId)  f.teacherId  = req.query.teacherId;
-  const subjects = await Subject.find(f).populate("teacherId", "name email").lean();
-  res.json(subjects);
+  try {
+    const f = {};
+    if (req.user.role === "hod") f.departmentId = req.user.departmentId;
+    else if (req.user.role === "subject_teacher")
+      f._id = { $in: (req.user.assignedSubjects || []).map(a => a.subjectId) };
+    else if (req.query.departmentId) f.departmentId = req.query.departmentId;
+    if (req.query.year)       f.year       = +req.query.year;
+    if (req.query.semester)   f.semester   = +req.query.semester;
+    if (req.query.divisionId) f.divisionId = req.query.divisionId;
+    if (req.query.teacherId)  f.teacherId  = req.query.teacherId;
+    const subjects = await Subject.find(f).populate("teacherId", "name email").lean();
+    res.json(subjects);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/subjects", auth("admin", "hod"), async (req, res) => {
@@ -283,21 +307,16 @@ app.patch("/subjects/:id", auth("admin", "hod"), async (req, res) => {
 });
 
 app.delete("/subjects/:id", auth("admin", "hod"), async (req, res) => {
-  const s = await Subject.findByIdAndDelete(req.params.id);
-  if (s?.teacherId)
-    await User.findByIdAndUpdate(s.teacherId, { $pull: { assignedSubjects: { subjectId: s._id } } });
-  res.json({ message: "Deleted." });
+  try {
+    const s = await Subject.findByIdAndDelete(req.params.id);
+    if (s?.teacherId)
+      await User.findByIdAndUpdate(s.teacherId, { $pull: { assignedSubjects: { subjectId: s._id } } });
+    res.json({ message: "Deleted." });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 /* ── Attendance ── */
 
-/**
- * Public: student QR check-in (no auth required)
- *
- * NEW: Accepts optional `lectureType` ("TH" or "PR"). Defaults to "TH".
- * For TH+PR subjects the QR payload or UI must pass the correct lectureType.
- * For TH-only or PR-only subjects the value is enforced server-side.
- */
 app.post("/attendance/checkin", async (req, res) => {
   try {
     const { studentRoll, studentName, subjectId, date, lectureType } = req.body;
@@ -307,15 +326,10 @@ app.post("/attendance/checkin", async (req, res) => {
     const s = await Subject.findById(subjectId).lean();
     if (!s) return res.status(404).json({ error: "Subject not found." });
 
-    // Determine effective lecture type
-    // For pure TH/PR subjects, ignore what was sent and enforce the subject type
     let effectiveLectureType;
-    if (s.type === "TH")    effectiveLectureType = "TH";
+    if (s.type === "TH")      effectiveLectureType = "TH";
     else if (s.type === "PR") effectiveLectureType = "PR";
-    else {
-      // TH+PR: caller must specify; default to "TH" if omitted
-      effectiveLectureType = lectureType === "PR" ? "PR" : "TH";
-    }
+    else effectiveLectureType = lectureType === "PR" ? "PR" : "TH";
 
     const today = date || new Date().toISOString().split("T")[0];
 
@@ -338,34 +352,25 @@ app.post("/attendance/checkin", async (req, res) => {
   }
 });
 
-/**
- * Bulk mark — present/absent for whole class in one call.
- *
- * NEW: Accepts `lectureType` ("TH" or "PR") in the request body.
- * Required for TH+PR subjects. Auto-enforced for TH-only and PR-only subjects.
- */
 app.post("/attendance/bulk", auth("admin", "hod", "subject_teacher"), async (req, res) => {
   try {
     const { subjectId, divisionId, date, records, lectureType } = req.body;
     const subject = await Subject.findById(subjectId).lean();
     if (!subject) return res.status(404).json({ error: "Subject not found." });
 
-    // Resolve effective lecture type
     let effectiveLectureType;
-    if (subject.type === "TH")     effectiveLectureType = "TH";
+    if (subject.type === "TH")      effectiveLectureType = "TH";
     else if (subject.type === "PR") effectiveLectureType = "PR";
     else {
-      // TH+PR: caller must specify
       if (!lectureType || !["TH", "PR"].includes(lectureType))
         return res.status(400).json({ error: "lectureType ('TH' or 'PR') is required for TH+PR subjects." });
       effectiveLectureType = lectureType;
     }
 
     const today = date || new Date().toISOString().split("T")[0];
-    const present    = records.filter(r => r.present);
+    const present     = records.filter(r => r.present);
     const absentRolls = records.filter(r => !r.present).map(r => r.studentRoll);
 
-    // Only delete absent records for the specific lecture type
     if (absentRolls.length)
       await Attendance.deleteMany({
         studentRoll: { $in: absentRolls },
@@ -396,12 +401,6 @@ app.post("/attendance/bulk", auth("admin", "hod", "subject_teacher"), async (req
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * Get attendance (scoped by role).
- *
- * NEW: Optional query param `lectureType=TH|PR` to filter by lecture type.
- * If omitted, all records are returned (both TH and PR).
- */
 app.get("/attendance", auth(), async (req, res) => {
   try {
     const { subjectId, divisionId, year, semester, departmentId, range, date, from, to, lectureType } = req.query;
@@ -419,8 +418,6 @@ app.get("/attendance", auth(), async (req, res) => {
     if (departmentId && req.user.role === "admin") f.departmentId = departmentId;
     if (year)         f.year         = +year;
     if (semester)     f.semester     = +semester;
-
-    // NEW: filter by lecture type
     if (lectureType && ["TH", "PR"].includes(lectureType)) f.lectureType = lectureType;
 
     if (date) f.date = date;
@@ -431,12 +428,6 @@ app.get("/attendance", auth(), async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * Toggle single record.
- *
- * NEW: Accepts `lectureType` in the request body.
- * Auto-enforced for pure TH/PR subjects; required for TH+PR subjects.
- */
 app.patch("/attendance", auth("admin", "hod", "subject_teacher"), async (req, res) => {
   try {
     const { studentRoll, subjectId, date, present, studentName, lectureType } = req.body;
@@ -444,9 +435,8 @@ app.patch("/attendance", auth("admin", "hod", "subject_teacher"), async (req, re
     const s = await Subject.findById(subjectId).lean();
     if (!s) return res.status(404).json({ error: "Subject not found." });
 
-    // Resolve effective lecture type
     let effectiveLectureType;
-    if (s.type === "TH")     effectiveLectureType = "TH";
+    if (s.type === "TH")      effectiveLectureType = "TH";
     else if (s.type === "PR") effectiveLectureType = "PR";
     else {
       if (!lectureType || !["TH", "PR"].includes(lectureType))
@@ -478,17 +468,6 @@ app.patch("/attendance", auth("admin", "hod", "subject_teacher"), async (req, re
 
 /* ── Export Excel ── */
 
-/**
- * Export attendance to Excel.
- *
- * Behaviour by subject type:
- *  - TH-only or PR-only: single sheet, same as before (just labelled accordingly).
- *  - TH+PR: two sheets — one for Theory, one for Practical — plus a Summary sheet
- *    showing TH%, PR%, and an overall combined %.
- *
- * NEW query param: `lectureType=TH|PR` — if provided on a TH+PR subject, exports
- * only that lecture type (single sheet). Omit to get all sheets.
- */
 app.get("/export/:subjectId", auth(), async (req, res) => {
   try {
     const subject = await Subject.findById(req.params.subjectId)
@@ -505,16 +484,14 @@ app.get("/export/:subjectId", auth(), async (req, res) => {
       ...(dateF && { date: dateF })
     };
 
-    // Determine which lecture types to export
     let typesToExport;
     if (subject.type === "TH")      typesToExport = ["TH"];
     else if (subject.type === "PR") typesToExport = ["PR"];
     else if (filterType && ["TH", "PR"].includes(filterType)) typesToExport = [filterType];
-    else                            typesToExport = ["TH", "PR"]; // full TH+PR export
+    else                            typesToExport = ["TH", "PR"];
 
     const wb = new ExcelJS.Workbook();
 
-    // Helper: build one worksheet for a given lectureType
     async function buildSheet(lt) {
       const records = await Attendance.find({ ...baseQuery, lectureType: lt }).sort({ date: 1 }).lean();
       if (!records.length) return null;
@@ -558,21 +535,19 @@ app.get("/export/:subjectId", auth(), async (req, res) => {
     const hasAnyData = Object.values(sheetResults).some(r => r !== null);
     if (!hasAnyData) return res.status(404).send("No data.");
 
-    // Summary sheet for TH+PR full export
     if (typesToExport.length === 2 && sheetResults["TH"] && sheetResults["PR"]) {
       const summaryWs = wb.addWorksheet("Summary");
       const sumHeader = summaryWs.addRow(["Roll", "Name", "TH Present", "TH Total", "TH %", "PR Present", "PR Total", "PR %", "Overall %"]);
       sumHeader.font = { bold: true };
       sumHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2F0D9" } };
 
-      // Merge student lists from both sheets
       const allRolls = new Set([
         ...sheetResults["TH"].students.map(s => s.roll),
         ...sheetResults["PR"].students.map(s => s.roll)
       ]);
 
-      const thMap = Object.fromEntries(sheetResults["TH"].students.map(s => [s.roll, s]));
-      const prMap = Object.fromEntries(sheetResults["PR"].students.map(s => [s.roll, s]));
+      const thMap   = Object.fromEntries(sheetResults["TH"].students.map(s => [s.roll, s]));
+      const prMap   = Object.fromEntries(sheetResults["PR"].students.map(s => [s.roll, s]));
       const thTotal = sheetResults["TH"].dates.length;
       const prTotal = sheetResults["PR"].dates.length;
 
@@ -604,11 +579,13 @@ app.get("/export/:subjectId", auth(), async (req, res) => {
   }
 });
 
-/* ── Start ── */
+/* ── Health & Fallback ── */
 
 app.get("/health", (_, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
-app.use((_, res) => res.status(404).send("Not found.")); // ← always last
+app.use((_, res) => res.status(404).send("Not found."));
+
+/* ── Start (local dev only) ── */
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(process.env.PORT || 3000, () => console.log("Server running on port 3000."));
