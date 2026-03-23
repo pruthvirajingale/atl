@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 async function connectDB() {
   if (isConnected) return;
-  await mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:pCl4w3q7micwHpkf@cluster99.apwbb2y.mongodb.net/", {
+  await mongoose.connect("mongodb+srv://ingalepruthviraj50_db_user:0hHU1IpFmdRXiJsP@cluster99.apwbb2y.mongodb.net/", {
     serverSelectionTimeoutMS: 5000,
     bufferCommands: false,
   });
