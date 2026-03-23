@@ -395,6 +395,12 @@
 </div>
 
 <script>
+  // Nuke any cached subject that isn't a 24-char MongoDB ObjectId
+const _cached = localStorage.getItem("selectedSubject");
+if (_cached && !/^[a-f\d]{24}$/i.test(_cached)) {
+  console.warn("Clearing bad cached subject:", _cached);
+  localStorage.removeItem("selectedSubject");
+}
   const API_BASE = "https://attendance-version-1.vercel.app";
   const TOKEN_PREFIX = "COLLEGE_QR_";
   const TOKEN_INTERVAL = 30;
@@ -588,6 +594,12 @@
     const roll = localStorage.getItem("roll");
     const name = localStorage.getItem("name");
     const subjectId = document.getElementById("subject").value;
+    const cachedSubject = localStorage.getItem("selectedSubject");
+    
+    // Debug — shows exactly what is being sent
+    setStatus(`Sending: subjectId="${subjectId}" | cached="${cachedSubject}"`, "ok");
+    console.log("subjectId:", subjectId, "| cached:", cachedSubject);
+    
     if (!subjectId) { setStatus("Please select a subject first.", "err"); return; }
 
     try {
