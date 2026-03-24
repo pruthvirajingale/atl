@@ -4,357 +4,330 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Attendance QR — Teacher Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #07070d;
-  --surface:   #0f0f1a;
-  --card:      #161620;
-  --border:    #2a2a3d;
-  --accent:    #7c6aff;
-  --accent2:   #ff6a9b;
-  --text:      #e8e8f0;
-  --muted:     #6b6b85;
-  --success:   #4ade80;
-  --warn:      #fbbf24;
-  --danger:    #f87171;
-  --th-color:  #60a5fa;
-  --pr-color:  #f472b6;
+  --bg:       #0a0a0a;
+  --surface:  #111111;
+  --card:     #161616;
+  --border:   #262626;
+  --border2:  #333333;
+  --accent:   #20b2aa;
+  --text:     #e8e8e8;
+  --muted:    #737373;
+  --subtle:   #404040;
+  --success:  #4ade80;
+  --warn:     #fbbf24;
+  --danger:   #f87171;
+  --th-color: #60a5fa;
+  --pr-color: #c084fc;
 }
 
 body {
-  font-family: 'Syne', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow-x: hidden;
+  font-size: 14px;
+  line-height: 1.5;
 }
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(124,106,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124,106,255,.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  top: -40%; left: -20%;
-  width: 70vw; height: 70vw;
-  background: radial-gradient(circle, rgba(124,106,255,.07) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-  animation: pulse 8s ease-in-out infinite alternate;
-}
-
-@keyframes pulse { from { opacity:.5; transform:scale(1); } to { opacity:1; transform:scale(1.08); } }
 
 .wrap {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 520px;
-  padding: 1.5rem;
+  max-width: 480px;
+  padding: 1.25rem;
 }
 
 /* ── LOGIN ── */
 .login-box {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2.5rem;
-  animation: slideUp .5s cubic-bezier(.16,1,.3,1) both;
+  border-radius: 12px;
+  padding: 2rem;
+  animation: fadeIn .3s ease both;
 }
 
-@keyframes slideUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .logo-row {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  margin-bottom: 2rem;
+  gap: .6rem;
+  margin-bottom: 1.75rem;
 }
 
 .logo-icon {
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 10px;
+  width: 32px; height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
-.logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -.02em; }
-.logo-sub  { font-size: .7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+.logo-text { font-size: 1rem; font-weight: 600; letter-spacing: -.01em; color: var(--text); }
+.logo-sub  { font-size: .68rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; letter-spacing: .05em; }
 
-h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .4rem; }
-.sub { font-size: .85rem; color: var(--muted); margin-bottom: 2rem; }
+h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -.02em; margin-bottom: .3rem; }
+.sub { font-size: .82rem; color: var(--muted); margin-bottom: 1.5rem; }
 
-.field { margin-bottom: 1.2rem; }
-label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
+.field { margin-bottom: 1rem; }
+label {
+  display: block; font-size: .72rem; font-weight: 500;
+  color: var(--muted); text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: .4rem;
+}
 
 input {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: .75rem 1rem;
+  border-radius: 8px;
+  padding: .65rem .9rem;
   color: var(--text);
-  font-family: 'Syne', sans-serif;
-  font-size: .9rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .875rem;
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .15s;
 }
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(124,106,255,.15);
-}
+input::placeholder { color: var(--subtle); }
+input:focus { border-color: var(--border2); }
 
 .btn {
   width: 100%;
-  padding: .85rem;
+  padding: .7rem;
   border: none;
-  border-radius: 10px;
-  font-family: 'Syne', sans-serif;
-  font-size: .95rem;
-  font-weight: 700;
+  border-radius: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all .2s;
-  letter-spacing: .02em;
+  transition: opacity .15s, background .15s;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), #5b4fd4);
-  color: #fff;
+  background: var(--text);
+  color: var(--bg);
 }
-.btn-primary:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,255,.35); }
-.btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-primary:hover  { opacity: .88; }
+.btn-primary:active { opacity: .78; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
 .error-msg {
-  background: rgba(248,113,113,.1);
-  border: 1px solid rgba(248,113,113,.3);
+  background: rgba(248,113,113,.08);
+  border: 1px solid rgba(248,113,113,.2);
   color: var(--danger);
-  border-radius: 8px;
-  padding: .65rem 1rem;
-  font-size: .82rem;
-  margin-bottom: 1rem;
+  border-radius: 6px;
+  padding: .55rem .85rem;
+  font-size: .8rem;
+  margin-bottom: .9rem;
   display: none;
 }
 
 /* ── QR SCREEN ── */
-.qr-screen { display: none; animation: slideUp .45s cubic-bezier(.16,1,.3,1) both; }
+.qr-screen { display: none; animation: fadeIn .3s ease both; }
 
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .user-badge {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  background: var(--card);
+  gap: .5rem;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 50px;
-  padding: .4rem .9rem .4rem .5rem;
+  border-radius: 6px;
+  padding: .3rem .65rem .3rem .45rem;
 }
 
 .avatar {
-  width: 30px; height: 30px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 50%;
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
-  font-size: .75rem; font-weight: 700;
+  font-size: .65rem; font-weight: 600; color: var(--bg);
 }
 
-.user-name  { font-size: .82rem; font-weight: 600; }
+.user-name  { font-size: .8rem; font-weight: 500; }
 .role-badge {
   font-size: .6rem;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--accent);
-  background: rgba(124,106,255,.12);
-  border: 1px solid rgba(124,106,255,.25);
-  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
   padding: 1px 5px;
-  margin-left: 4px;
+  letter-spacing: .03em;
 }
 
 .logout-btn {
   background: none; border: none; color: var(--muted);
-  font-size: .75rem; cursor: pointer; font-family: 'Syne', sans-serif;
-  padding: .3rem .6rem; border-radius: 6px; transition: color .2s;
+  font-size: .75rem; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+  padding: .25rem .5rem; border-radius: 4px; transition: color .15s;
 }
 .logout-btn:hover { color: var(--danger); }
 
 .date-chip {
   display: inline-flex;
   align-items: center;
-  gap: .4rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .72rem;
+  gap: .35rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .7rem;
   color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: .3rem .8rem;
-  margin-bottom: 1rem;
+  margin-bottom: .9rem;
 }
 
 /* Subject selector */
 .selector-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.2rem;
-}
-
-.selector-card h3 {
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--muted);
+  border-radius: 10px;
+  padding: 1.25rem;
   margin-bottom: 1rem;
 }
 
-.subject-grid { display: grid; gap: .6rem; }
+.selector-card h3 {
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: .9rem;
+}
+
+.subject-grid { display: grid; gap: .4rem; }
 
 .subject-item {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .9rem 1rem;
+  border-radius: 8px;
+  padding: .75rem .9rem;
   cursor: pointer;
-  transition: all .2s;
+  transition: border-color .15s, background .15s;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: .75rem;
 }
 
-.subject-item:hover { border-color: var(--accent); background: rgba(124,106,255,.06); }
-.subject-item.active { border-color: var(--accent); background: rgba(124,106,255,.12); box-shadow: 0 0 0 1px var(--accent); }
+.subject-item:hover { border-color: var(--border2); background: #1a1a1a; }
+.subject-item.active { border-color: var(--accent); background: rgba(32,178,170,.06); }
 
 .subj-info { flex: 1; min-width: 0; }
-.subj-name { font-size: .9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.subj-meta { font-size: .72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.subj-name { font-size: .875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.subj-meta { font-size: .7rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
 
 .type-badge {
-  font-size: .65rem; font-weight: 700;
-  padding: .2rem .55rem; border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  flex-shrink: 0;
+  font-size: .62rem; font-weight: 500;
+  padding: .15rem .5rem; border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  flex-shrink: 0; letter-spacing: .03em;
 }
-.badge-TH   { background: rgba(96,165,250,.15);  color: var(--th-color); border: 1px solid rgba(96,165,250,.3); }
-.badge-PR   { background: rgba(244,114,182,.15); color: var(--pr-color); border: 1px solid rgba(244,114,182,.3); }
-.badge-THPR { background: rgba(124,106,255,.15); color: var(--accent);   border: 1px solid rgba(124,106,255,.3); }
+.badge-TH   { background: rgba(96,165,250,.1);  color: var(--th-color); border: 1px solid rgba(96,165,250,.2); }
+.badge-PR   { background: rgba(192,132,252,.1); color: var(--pr-color); border: 1px solid rgba(192,132,252,.2); }
+.badge-THPR { background: rgba(32,178,170,.1);  color: var(--accent);   border: 1px solid rgba(32,178,170,.2); }
 
 /* lecture type toggle */
-.lt-toggle { display: flex; gap: .5rem; margin-top: .9rem; }
+.lt-toggle { display: flex; gap: .4rem; margin-top: .75rem; }
 
 .lt-btn {
-  flex: 1; padding: .55rem;
-  border-radius: 8px; border: 1px solid var(--border);
+  flex: 1; padding: .5rem;
+  border-radius: 6px; border: 1px solid var(--border);
   background: var(--surface); cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .8rem; font-weight: 500;
-  color: var(--muted); transition: all .2s;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .75rem; font-weight: 500;
+  color: var(--muted); transition: all .15s;
 }
-.lt-btn.active-th { background: rgba(96,165,250,.15); border-color: var(--th-color); color: var(--th-color); }
-.lt-btn.active-pr { background: rgba(244,114,182,.15); border-color: var(--pr-color); color: var(--pr-color); }
+.lt-btn:hover { border-color: var(--border2); color: var(--text); }
+.lt-btn.active-th { background: rgba(96,165,250,.1); border-color: rgba(96,165,250,.3); color: var(--th-color); }
+.lt-btn.active-pr { background: rgba(192,132,252,.1); border-color: rgba(192,132,252,.3); color: var(--pr-color); }
 
 /* QR card */
 .qr-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 1.25rem;
   text-align: center;
   display: none;
 }
 .qr-card.visible { display: block; }
 
 .qr-label {
-  font-size: .7rem; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted);
-  font-weight: 600; margin-bottom: 1rem;
+  font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted);
+  font-weight: 600; margin-bottom: .9rem;
 }
 
 .qr-wrap {
   display: inline-flex;
   align-items: center; justify-content: center;
-  background: #fff; border-radius: 16px; padding: 14px;
+  background: #fff; border-radius: 10px; padding: 12px;
   position: relative;
-  box-shadow: 0 0 40px rgba(124,106,255,.2);
 }
 
-#qrcode canvas, #qrcode img { display: block; border-radius: 4px; }
+#qrcode canvas, #qrcode img { display: block; border-radius: 2px; }
 
 .refresh-ring {
-  position: absolute; inset: -7px;
-  border-radius: 24px; pointer-events: none;
+  position: absolute; inset: -6px;
+  border-radius: 16px; pointer-events: none;
 }
-
 .refresh-ring svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-.ring-track { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 3; }
-.ring-prog  { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .95s linear; }
+.ring-track { fill: none; stroke: rgba(255,255,255,.06); stroke-width: 2.5; }
+.ring-prog  { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset .95s linear; }
 
 .qr-footer {
-  margin-top: 1rem;
+  margin-top: .9rem;
   display: flex; align-items: center; justify-content: space-between;
 }
 
-.qr-subject-label { font-size: .82rem; font-weight: 700; text-align: left; }
+.qr-subject-label { font-size: .8rem; font-weight: 500; text-align: left; line-height: 1.5; }
 
 .timer-badge {
-  font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: .72rem;
   color: var(--muted); background: var(--surface);
-  border: 1px solid var(--border); padding: .3rem .7rem;
-  border-radius: 20px; display: flex; align-items: center; gap: .4rem;
+  border: 1px solid var(--border); padding: .25rem .65rem;
+  border-radius: 6px; display: flex; align-items: center; gap: .35rem;
   flex-shrink: 0;
 }
 
 .timer-dot {
-  width: 6px; height: 6px; background: var(--success);
+  width: 5px; height: 5px; background: var(--success);
   border-radius: 50%; animation: blink 1s ease-in-out infinite;
 }
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
 .qr-hint {
-  margin-top: .75rem; font-size: .65rem; color: var(--muted);
-  font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.5;
-  background: var(--surface); border-radius: 8px; padding: .6rem .75rem;
-  border: 1px solid var(--border);
+  margin-top: .65rem; font-size: .65rem; color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace; word-break: break-all; line-height: 1.6;
+  background: var(--surface); border-radius: 6px; padding: .55rem .7rem;
+  border: 1px solid var(--border); text-align: left;
 }
 
 .empty-state {
-  padding: 2.5rem 1rem; text-align: center;
-  color: var(--muted); font-size: .85rem; line-height: 1.7;
+  padding: 2rem 1rem; text-align: center;
+  color: var(--muted); font-size: .82rem; line-height: 1.8;
 }
-.empty-state .icon { font-size: 2rem; margin-bottom: .75rem; opacity: .4; }
+.empty-state .icon { font-size: 1.5rem; margin-bottom: .6rem; opacity: .3; }
 
 .loading-spin {
-  width: 22px; height: 22px;
-  border: 2px solid var(--border); border-top-color: var(--accent);
+  width: 18px; height: 18px;
+  border: 2px solid var(--border); border-top-color: var(--muted);
   border-radius: 50%; animation: spin .7s linear infinite;
-  margin: 1.5rem auto;
+  margin: 1.25rem auto;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -395,10 +368,10 @@ input:focus {
 
     <div class="top-bar">
       <div class="logo-row" style="margin:0;">
-        <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;">📋</div>
-        <span class="logo-text" style="font-size:.95rem;">AttendQR</span>
+        <div class="logo-icon" style="width:26px;height:26px;font-size:.85rem;">📋</div>
+        <span class="logo-text" style="font-size:.9rem;">AttendQR</span>
       </div>
-      <div style="display:flex;align-items:center;gap:.65rem;">
+      <div style="display:flex;align-items:center;gap:.5rem;">
         <div class="user-badge">
           <div class="avatar" id="avatarEl"></div>
           <span class="user-name" id="userNameEl"></span>
@@ -645,7 +618,7 @@ function selectSubject(subj) {
   const ltToggle = document.getElementById('ltToggle');
   if (subj.type === 'TH+PR') {
     ltToggle.style.display = 'flex';
-    setLectureType(lectureType);   // re-apply current or default
+    setLectureType(lectureType);
   } else {
     ltToggle.style.display = 'none';
     lectureType = subj.type === 'PR' ? 'PR' : 'TH';
@@ -706,8 +679,8 @@ function updateLabels(url) {
   const label = ispr ? '🔬 Practical' : '📘 Theory';
 
   document.getElementById('qrSubjectLabel').innerHTML =
-    `<span style="color:${color};font-size:.75rem;">${label}</span><br>
-     <strong>${selectedSubj.code}</strong> — ${selectedSubj.name} <span style="color:var(--muted);font-size:.75rem;">(${selectedSubj.divisionName})</span>`;
+    `<span style="color:${color};font-size:.72rem;">${label}</span><br>
+     <strong>${selectedSubj.code}</strong> — ${selectedSubj.name} <span style="color:var(--muted);font-size:.72rem;">(${selectedSubj.divisionName})</span>`;
 
   document.getElementById('qrHint').textContent = url;
 }
@@ -730,11 +703,9 @@ function startCountdown() {
 function tickTimer() {
   document.getElementById('timerLabel').textContent = `${countDown}s`;
 
-  // Ring progress
   const frac = countDown / REFRESH_SEC;
   ringEl.style.strokeDashoffset = PERIM * (1 - frac);
 
-  // Colour gradient as time runs out
   if (frac > .5)       ringEl.style.stroke = 'var(--accent)';
   else if (frac > .25) ringEl.style.stroke = 'var(--warn)';
   else                  ringEl.style.stroke = 'var(--danger)';
