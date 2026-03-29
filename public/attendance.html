@@ -5,101 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: #0d0d0d; color: #fff; min-height: 100vh; }
-
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 28px; border-bottom: 1px solid #1f1f1f;
-      position: sticky; top: 0; background: #0d0d0d; z-index: 10;
-    }
-    .nav-left { display: flex; align-items: center; gap: 12px; }
-    .nav-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 2s infinite; }
-    .dot-yellow { background: #fbbf24; }
-    .dot-purple { background: #a78bfa; }
-    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-    .nav-title { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #555; }
-    .nav-right { display: flex; align-items: center; gap: 10px; }
-    .nav-name  { font-size: 13px; color: #666; }
-    .btn-logout { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #444; background: none; border: 1px solid #222; border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: all .15s; }
-    .btn-logout:hover { color: #f87171; border-color: #3a1515; }
-
-    .page { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
-
-    /* ── Filters ── */
-    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
-    .filter-bar select, .filter-bar input[type="date"] {
-      padding: 8px 12px; font-size: 12px; font-family: 'DM Mono', monospace;
-      background: #111; color: #888; border: 1px solid #222; border-radius: 7px;
-      outline: none; cursor: pointer; transition: border-color .15s; letter-spacing: .04em;
-    }
-    .filter-bar select:focus, .filter-bar input:focus { border-color: #444; color: #fff; }
-    .filter-bar select option { background: #1a1a1a; }
-
-    .btn { padding: 8px 16px; border-radius: 7px; font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: .06em; cursor: pointer; border: none; transition: all .15s; }
-    .btn-primary { background: #fff; color: #0d0d0d; }
-    .btn-primary:hover { background: #d8d8d8; }
-    .btn-outline { background: none; color: #888; border: 1px solid #2a2a2a; }
-    .btn-outline:hover { color: #fff; border-color: #444; }
-
-    /* ── Role badge ── */
-    .role-strip {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 20px; padding: 12px 16px;
-      background: #111; border: 1px solid #1f1f1f; border-radius: 8px;
-    }
-    .role-strip .label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #444; }
-    .role-strip .val   { font-size: 13px; color: #ccc; }
-    .sep { color: #333; }
-
-    /* ── Table ── */
-    .card { background: #111; border: 1px solid #1f1f1f; border-radius: 10px; overflow: hidden; }
-    .tbl-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em;
-      text-transform: uppercase; color: #444; text-align: left;
-      padding: 10px 12px; border-bottom: 1px solid #1f1f1f;
-      white-space: nowrap; background: #0f0f0f;
-    }
-    tbody td {
-      padding: 10px 12px; font-size: 13px; color: #999;
-      border-bottom: 1px solid #161616; white-space: nowrap;
-    }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: #131313; }
-
-    .P { color: #4ade80; font-family: 'DM Mono', monospace; font-size: 11px; }
-    .A { color: #333;    font-family: 'DM Mono', monospace; font-size: 11px; }
-
-    .pct { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
-    .pct-ok   { color: #4ade80; }
-    .pct-warn { color: #fbbf24; }
-    .pct-bad  { color: #f87171; }
-
-    .pill { display: inline-block; padding: 2px 8px; font-family: 'DM Mono', monospace; font-size: 10px; border-radius: 4px; }
-    .pill-blue   { background: #0d1520; color: #60a5fa; border: 1px solid #1a3050; }
-    .pill-purple { background: #130d20; color: #a78bfa; border: 1px solid #2a1a50; }
-
-    .empty { text-align: center; padding: 48px; color: #333; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .1em; }
-
-    /* ── Summary ── */
-    .summary { display: flex; gap: 24px; padding: 14px 18px; border-top: 1px solid #1a1a1a; flex-wrap: wrap; }
-    .sum-item { font-family: 'DM Mono', monospace; }
-    .sum-val  { color: #fff; font-size: 18px; display: block; margin-bottom: 2px; }
-    .sum-lbl  { color: #444; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-
-    /* ── Subject tabs (subject_teacher only) ── */
-    .sub-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .sub-pill {
-      padding: 7px 14px; border-radius: 20px; font-family: 'DM Mono', monospace;
-      font-size: 11px; letter-spacing: .06em; cursor: pointer;
-      border: 1px solid #2a2a2a; background: #111; color: #555; transition: all .15s;
-    }
-    .sub-pill:hover { color: #fff; border-color: #444; }
-    .sub-pill.active { background: #130d20; color: #a78bfa; border-color: #2a1a50; }
-  </style>
+  <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
 
@@ -116,15 +22,10 @@
 
 <div class="page">
 
-  <!-- Role info strip -->
   <div class="role-strip" id="roleStrip" style="display:none;"></div>
+  <div class="sub-bar"   id="subBar"    style="display:none;"></div>
 
-  <!-- Subject pills — subject_teacher only -->
-  <div class="sub-bar" id="subBar" style="display:none;"></div>
-
-  <!-- Filters -->
   <div class="filter-bar">
-    <!-- class_teacher filters -->
     <select id="fSubject" style="display:none;" onchange="onFilterChange()">
       <option value="">All Subjects</option>
     </select>
@@ -139,7 +40,6 @@
     <select id="fDiv" style="display:none;" onchange="onFilterChange()">
       <option value="">All Divisions</option>
     </select>
-    <!-- shared -->
     <select id="fRange" onchange="onFilterChange()">
       <option value="week">Last 1 Week</option>
       <option value="2weeks">Last 2 Weeks</option>
@@ -151,10 +51,9 @@
     <button class="btn btn-outline" onclick="exportExcel()">↓ Export</button>
   </div>
 
-  <!-- Table -->
   <div class="card">
     <div class="tbl-wrap">
-      <table>
+      <table class="tbl">
         <thead id="tHead"></thead>
         <tbody id="tBody"><tr><td class="empty">Loading…</td></tr></tbody>
       </table>
@@ -164,24 +63,34 @@
 
 </div>
 
+<div id="saveToast" class="save-toast" style="display:none;"></div>
+
 <script>
-  const API   = "https://attendance-version-1.vercel.app";
+  const API = "https://attendance-version-1.vercel.app";
   const token = localStorage.getItem("token");
   const role  = localStorage.getItem("role");
 
-  if (!token || !["class_teacher","subject_teacher"].includes(role))
+  if (!token || !["class_teacher", "subject_teacher"].includes(role))
     window.location.href = "login.html";
 
   const hdrs = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-  function $(id) { return document.getElementById(id); }
-  function logout() { localStorage.clear(); window.location.href = "login.html"; }
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function fmtDate(iso) { const [, m, d] = iso.split("-"); return `${d} ${MONTHS[+m - 1]}`; }
+  function pctCls(p)    { return p === null ? "" : p >= 75 ? "pct-ok" : p >= 60 ? "pct-warn" : "pct-bad"; }
+  function $(id)        { return document.getElementById(id); }
+  function logout()     { localStorage.clear(); window.location.href = "login.html"; }
 
-  let dept           = null;   // full department object (class_teacher)
-  let allSubjects    = [];     // all subjects in dept (class_teacher) or assigned (subject_teacher)
-  let activeSubject  = null;   // selected subject pill (subject_teacher)
+  let dept          = null;
+  let allSubjects   = [];
+  let activeSubject = null;
 
-  /* ── Nav setup by role ── */
+  let currentRows    = [];
+  let currentThDates = [];
+  let currentPrDates = [];
+  let currentHasTH   = false;
+  let currentHasPR   = false;
+
   $("navName").textContent = localStorage.getItem("name") || "";
   if (role === "class_teacher") {
     $("navDot").classList.add("dot-yellow");
@@ -191,7 +100,6 @@
     $("navTitle").textContent = "Subject Teacher";
   }
 
-  /* ── Range custom toggle ── */
   $("fRange").addEventListener("change", () => {
     const custom = $("fRange").value === "custom";
     $("fFrom").style.display = custom ? "" : "none";
@@ -199,22 +107,23 @@
     if (!custom) onFilterChange();
   });
 
+
   /* ── Init ── */
+
   async function init() {
-    if (role === "class_teacher") {
-      await initClassTeacher();
-    } else {
-      await initSubjectTeacher();
+    try {
+      if (role === "class_teacher") await initClassTeacher();
+      else                          await initSubjectTeacher();
+    } catch (err) {
+      console.error("Init error:", err);
+      $("tBody").innerHTML = `<tr><td class="empty">Failed to load: ${err.message}</td></tr>`;
     }
   }
 
-  /* ════ CLASS TEACHER ════ */
   async function initClassTeacher() {
     const deptId = localStorage.getItem("departmentId");
-    const res    = await fetch(`${API}/departments/${deptId}`, { headers: hdrs });
-    dept         = await res.json();
+    dept = await fetch(`${API}/departments/${deptId}`, { headers: hdrs }).then(r => r.json());
 
-    // Role strip
     $("roleStrip").style.display = "";
     $("roleStrip").innerHTML = `
       <span class="label">Department</span>
@@ -223,25 +132,21 @@
       <span class="label">Access</span>
       <span class="val">All subjects, all years</span>`;
 
-    // Load all subjects in dept
-    const sRes   = await fetch(`${API}/subjects?departmentId=${deptId}`, { headers: hdrs });
-    allSubjects  = await sRes.json();
+    allSubjects = await fetch(`${API}/subjects?departmentId=${deptId}`, { headers: hdrs }).then(r => r.json());
 
-    // Populate filters
-    $("fSubject").style.display = "";
-    $("fYear").style.display    = "";
-    $("fSem").style.display     = "";
-    $("fDiv").style.display     = "";
+    ["fSubject", "fYear", "fSem", "fDiv"].forEach(id => $(id).style.display = "");
 
     $("fSubject").innerHTML = `<option value="">All Subjects</option>` +
-      allSubjects.map(s => `<option value="${s._id}">${s.name} (${s.code}) · Div ${s.divisionName} · Y${s.year}S${s.semester} · ${s.type}</option>`).join("");
+      allSubjects.map(s =>
+        `<option value="${s._id}">${s.name} (${s.code}) · Div ${s.divisionName} · Y${s.year}S${s.semester} · ${s.type}</option>`
+      ).join("");
 
     const years = [...new Set((dept.years || []).map(y => y.year))].sort();
     $("fYear").innerHTML = `<option value="">All Years</option>` +
       years.map(y => `<option value="${y}">Year ${y}</option>`).join("");
 
     $("fYear").addEventListener("change", () => {
-      const yr  = +$("fYear").value;
+      const yr   = +$("fYear").value;
       const yObj = (dept.years || []).find(y => y.year === yr);
       const divs = yObj?.divisions || (dept.years || []).flatMap(y => y.divisions);
       $("fDiv").innerHTML = `<option value="">All Divisions</option>` +
@@ -251,17 +156,14 @@
     loadAttendance();
   }
 
-  /* ════ SUBJECT TEACHER ════ */
   async function initSubjectTeacher() {
-    const res   = await fetch(`${API}/subjects`, { headers: hdrs });
-    allSubjects = await res.json();
+    allSubjects = await fetch(`${API}/subjects`, { headers: hdrs }).then(r => r.json());
 
     if (!allSubjects.length) {
       $("tBody").innerHTML = `<tr><td class="empty">No subjects assigned yet.</td></tr>`;
       return;
     }
 
-    // Show subject pills
     $("subBar").style.display = "";
     $("subBar").innerHTML = allSubjects.map(s =>
       `<button class="sub-pill" data-id="${s._id}" onclick="selectSubject('${s._id}')">
@@ -269,7 +171,6 @@
       </button>`
     ).join("");
 
-    // Role strip
     $("roleStrip").style.display = "";
     $("roleStrip").innerHTML = `
       <span class="label">Role</span><span class="val">Subject Teacher</span>
@@ -277,7 +178,6 @@
       <span class="label">Subjects</span>
       <span class="val">${allSubjects.length} assigned</span>`;
 
-    // Auto-select first
     selectSubject(allSubjects[0]._id);
   }
 
@@ -286,7 +186,6 @@
     document.querySelectorAll(".sub-pill").forEach(p =>
       p.classList.toggle("active", p.dataset.id === id)
     );
-    // Update role strip
     $("roleStrip").innerHTML = `
       <span class="label">Subject</span><span class="val">${activeSubject.name} (${activeSubject.code})</span>
       <span class="sep">·</span>
@@ -294,11 +193,28 @@
       <span class="sep">·</span>
       <span class="label">Year / Sem</span><span class="val">Y${activeSubject.year} S${activeSubject.semester}</span>
       <span class="sep">·</span>
-      <span class="pill pill-${activeSubject.type === 'TH' ? 'blue' : 'purple'}">${activeSubject.type}</span>`;
+      <span class="pill pill-${activeSubject.type === "TH" ? "blue" : "purple"}">${activeSubject.type}</span>`;
     loadAttendance();
   }
 
-  /* ════ LOAD ATTENDANCE ════ */
+
+  /* ── Helpers ── */
+
+  // Always returns an array — never throws
+  async function safeFetch(url) {
+    try {
+      const res  = await fetch(url, { headers: hdrs });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+
+  /* ── Load Attendance ── */
+
   function onFilterChange() { loadAttendance(); }
 
   async function loadAttendance() {
@@ -306,117 +222,316 @@
     $("tHead").innerHTML = "";
     $("summary").style.display = "none";
 
-    const params = new URLSearchParams();
+    try {
+      const attParams  = new URLSearchParams();
+      let   divisionId = null;
 
-    if (role === "subject_teacher") {
-      if (!activeSubject) return;
-      params.set("subjectId", activeSubject._id);
-    } else {
-      // class_teacher
-      const subId = $("fSubject").value;
-      const year  = $("fYear").value;
-      const sem   = $("fSem").value;
-      const divId = $("fDiv").value;
-      if (subId) params.set("subjectId", subId);
-      if (year)  params.set("year", year);
-      if (sem)   params.set("semester", sem);
-      if (divId) params.set("divisionId", divId);
+      if (role === "subject_teacher") {
+        if (!activeSubject) return;
+        attParams.set("subjectId",  activeSubject._id);
+        attParams.set("divisionId", activeSubject.divisionId);
+        divisionId = activeSubject.divisionId;
+      } else {
+        const subId = $("fSubject").value;
+        const year  = $("fYear").value;
+        const sem   = $("fSem").value;
+        const divId = $("fDiv").value;
+
+        if (subId) {
+          attParams.set("subjectId", subId);
+          const sub = allSubjects.find(s => s._id === subId);
+          if (!divId && sub?.divisionId) {
+            attParams.set("divisionId", sub.divisionId);
+            divisionId = sub.divisionId;
+          }
+        }
+        if (year)  attParams.set("year", year);
+        if (sem)   attParams.set("semester", sem);
+        if (divId) { attParams.set("divisionId", divId); divisionId = divId; }
+      }
+
+      const range = $("fRange").value;
+      if (range === "custom") {
+        const from = $("fFrom").value, to = $("fTo").value;
+        if (from) attParams.set("from", from);
+        if (to)   attParams.set("to",   to);
+      } else {
+        attParams.set("range", range);
+      }
+
+      // Both fetches are safe — roster returns [] if divisionId is null or request fails
+      const rosterUrl = divisionId ? `${API}/students?divisionId=${divisionId}` : null;
+
+      const [data, roster] = await Promise.all([
+        safeFetch(`${API}/attendance?${attParams}`),
+        rosterUrl ? safeFetch(rosterUrl) : Promise.resolve([]),
+      ]);
+
+      if (!data.length && !roster.length) {
+        $("tBody").innerHTML = `<tr><td class="empty">No records found for this selection.</td></tr>`;
+        return;
+      }
+
+      renderTable(data, roster);
+
+    } catch (err) {
+      console.error("loadAttendance error:", err);
+      $("tBody").innerHTML = `<tr><td class="empty">Error: ${err.message}</td></tr>`;
     }
-
-    // Date range
-    const range = $("fRange").value;
-    if (range === "custom") {
-      const from = $("fFrom").value;
-      const to   = $("fTo").value;
-      if (from) params.set("from", from);
-      if (to)   params.set("to", to);
-    } else {
-      params.set("range", range);
-    }
-
-    const res  = await fetch(`${API}/attendance?${params}`, { headers: hdrs });
-    const data = await res.json();
-
-    if (!data.length) {
-      $("tBody").innerHTML = `<tr><td class="empty">No records found for this selection.</td></tr>`;
-      return;
-    }
-
-    renderTable(data);
   }
 
-  /* ════ RENDER TABLE ════ */
-  function renderTable(records) {
-    // Unique sorted dates
-    const dates = [...new Set(records.map(r => r.date))].sort();
 
-    // Group by student roll
+  /* ── Render Table ── */
+
+  function renderTable(records, roster) {
+    const thRecords = records.filter(r => r.lectureType === "TH");
+    const prRecords = records.filter(r => r.lectureType === "PR");
+    const hasTH     = thRecords.length > 0;
+    const hasPR     = prRecords.length > 0;
+
+    const thDates = [...new Set(thRecords.map(r => r.date))].sort();
+    const prDates = [...new Set(prRecords.map(r => r.date))].sort();
+
+    // Seed from roster first — all uploaded students appear even with zero attendance
     const students = {};
+    (roster || []).forEach(s => {
+      students[String(s.roll)] = {
+        roll:    String(s.roll),
+        name:    s.name,
+        thDates: new Set(),
+        prDates: new Set(),
+      };
+    });
+
+    // Overlay attendance records — also catches QR-only students not in roster
     records.forEach(r => {
-      students[r.studentRoll] ??= { roll: r.studentRoll, name: r.studentName, dates: new Set() };
-      students[r.studentRoll].dates.add(r.date);
+      if (!students[r.studentRoll]) {
+        students[r.studentRoll] = {
+          roll:    r.studentRoll,
+          name:    r.studentName,
+          thDates: new Set(),
+          prDates: new Set(),
+        };
+      }
+      if (r.lectureType === "TH") students[r.studentRoll].thDates.add(r.date);
+      else                        students[r.studentRoll].prDates.add(r.date);
     });
 
     const rows = Object.values(students).sort((a, b) => +a.roll - +b.roll);
 
-    // Header
-    $("tHead").innerHTML = `<tr>
-      <th>Roll</th><th>Name</th>
-      ${dates.map(d => `<th>${fmtDate(d)}</th>`).join("")}
-      <th>Present</th><th>Total</th><th>%</th>
-    </tr>`;
+    currentRows    = rows;
+    currentThDates = thDates;
+    currentPrDates = prDates;
+    currentHasTH   = hasTH;
+    currentHasPR   = hasPR;
 
-    // Rows
+    // Roster exists but no lectures taken yet
+    if (!hasTH && !hasPR) {
+      $("tHead").innerHTML = `<tr><th>Roll</th><th>Name</th><th style="color:var(--ink-muted);font-weight:400;font-size:13px;">No lectures recorded yet</th></tr>`;
+      $("tBody").innerHTML = rows.map(s =>
+        `<tr>
+          <td class="td-roll">${s.roll}</td>
+          <td>${s.name}</td>
+          <td style="color:var(--ink-faint);text-align:center;">—</td>
+        </tr>`
+      ).join("");
+      renderSummary();
+      return;
+    }
+
+    // Build headers
+    let headerHTML = "<tr><th>Roll</th><th>Name</th>";
+    if (hasTH) headerHTML += `<th colspan="${thDates.length}" class="th-group-th">TH — Theory</th>`;
+    if (hasPR) headerHTML += `<th colspan="${prDates.length}" class="th-group-pr">PR — Practical</th>`;
+    if (hasTH) headerHTML += `<th class="th-group-th">TH %</th>`;
+    if (hasPR) headerHTML += `<th class="th-group-pr">PR %</th>`;
+    if (hasTH && hasPR) headerHTML += "<th>Overall %</th>";
+    headerHTML += "</tr>";
+
+    let dateRowHTML = "<tr><th></th><th></th>";
+    if (hasTH) dateRowHTML += thDates.map(d => `<th class="th-date-th">${fmtDate(d)}</th>`).join("");
+    if (hasPR) dateRowHTML += prDates.map(d => `<th class="th-date-pr">${fmtDate(d)}</th>`).join("");
+    if (hasTH) dateRowHTML += "<th></th>";
+    if (hasPR) dateRowHTML += "<th></th>";
+    if (hasTH && hasPR) dateRowHTML += "<th></th>";
+    dateRowHTML += "</tr>";
+
+    $("tHead").innerHTML = headerHTML + dateRowHTML;
+
+    const editSubjectId = activeSubject?._id || $("fSubject").value;
+
     $("tBody").innerHTML = rows.map(s => {
-      const attended = dates.filter(d => s.dates.has(d)).length;
-      const pct      = Math.round((attended / dates.length) * 100);
-      const cls      = pct >= 75 ? "pct-ok" : pct >= 60 ? "pct-warn" : "pct-bad";
-      return `<tr>
-        <td style="font-family:'DM Mono',monospace;font-size:11px;color:#555;">${s.roll}</td>
-        <td style="color:#ccc;">${s.name}</td>
-        ${dates.map(d => `<td class="${s.dates.has(d) ? "P" : "A"}">${s.dates.has(d) ? "P" : "A"}</td>`).join("")}
-        <td style="font-family:'DM Mono',monospace;font-size:12px;">${attended}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:12px;color:#555;">${dates.length}</td>
-        <td class="pct ${cls}">${pct}%</td>
-      </tr>`;
+      const thAtt      = thDates.filter(d => s.thDates.has(d)).length;
+      const prAtt      = prDates.filter(d => s.prDates.has(d)).length;
+      const thPct      = hasTH && thDates.length ? Math.round((thAtt / thDates.length) * 100) : null;
+      const prPct      = hasPR && prDates.length ? Math.round((prAtt / prDates.length) * 100) : null;
+      const totLec     = thDates.length + prDates.length;
+      const overallPct = totLec ? Math.round(((thAtt + prAtt) / totLec) * 100) : null;
+      const safeName   = encodeURIComponent(s.name);
+
+      const attCell = (d, type, present) =>
+        `<td class="${present ? "P" : "A"} att-cell"
+          data-roll="${s.roll}"
+          data-name="${safeName}"
+          data-date="${d}"
+          data-type="${type}"
+          data-subject="${editSubjectId}"
+          onclick="toggleAttendance(this)"
+          title="Click to toggle"
+        >${present ? "P" : "A"}</td>`;
+
+      let html = `<td class="td-roll">${s.roll}</td><td>${s.name}</td>`;
+      if (hasTH) html += thDates.map(d => attCell(d, "TH", s.thDates.has(d))).join("");
+      if (hasPR) html += prDates.map(d => attCell(d, "PR", s.prDates.has(d))).join("");
+      if (hasTH) html += `<td class="${pctCls(thPct)}" data-th-pct="${s.roll}">${thPct !== null ? thPct + "%" : "N/A"}</td>`;
+      if (hasPR) html += `<td class="${pctCls(prPct)}" data-pr-pct="${s.roll}">${prPct !== null ? prPct + "%" : "N/A"}</td>`;
+      if (hasTH && hasPR) html += `<td class="${pctCls(overallPct)}" data-ov-pct="${s.roll}">${overallPct !== null ? overallPct + "%" : "N/A"}</td>`;
+
+      return `<tr>${html}</tr>`;
     }).join("");
 
-    // Summary
-    const total  = rows.length;
-    const avg    = Math.round(rows.reduce((s, r) => s + (r.dates.size / dates.length) * 100, 0) / total);
-    const below  = rows.filter(r => (r.dates.size / dates.length) * 100 < 75).length;
-
-    $("summary").style.display = "";
-    $("summary").innerHTML = [
-      ["Students",       total],
-      ["Lectures",       dates.length],
-      ["Avg Attendance", avg + "%"],
-      ["Below 75%",      below]
-    ].map(([l, v]) => `<div class="sum-item"><span class="sum-val">${v}</span><span class="sum-lbl">${l}</span></div>`).join("");
+    renderSummary();
   }
 
-  /* ════ EXPORT ════ */
-  function exportExcel() {
-    const id = role === "subject_teacher"
-      ? activeSubject?._id
-      : $("fSubject").value;
 
+  /* ── Toggle Attendance ── */
+
+  async function toggleAttendance(cell) {
+    if (cell.dataset.saving) return;
+
+    const roll        = cell.dataset.roll;
+    const name        = decodeURIComponent(cell.dataset.name);
+    const date        = cell.dataset.date;
+    const lectureType = cell.dataset.type;
+    const subjectId   = cell.dataset.subject;
+    const isPresent   = cell.classList.contains("P");
+    const newPresent  = !isPresent;
+
+    cell.dataset.saving = "1";
+    cell.classList.add("att-saving");
+    cell.classList.replace(isPresent ? "P" : "A", newPresent ? "P" : "A");
+    cell.textContent = newPresent ? "P" : "A";
+
+    const student = currentRows.find(r => r.roll === roll);
+    if (student) {
+      const dateSet = lectureType === "TH" ? student.thDates : student.prDates;
+      newPresent ? dateSet.add(date) : dateSet.delete(date);
+    }
+
+    try {
+      const res = await fetch(`${API}/attendance`, {
+        method:  "PATCH",
+        headers: hdrs,
+        body:    JSON.stringify({ studentRoll: roll, studentName: name, subjectId, date, lectureType, present: newPresent }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || res.statusText);
+      }
+      updateRowStats(roll);
+      renderSummary();
+      showToast(`${roll} · ${fmtDate(date)} (${lectureType}) → ${newPresent ? "Present" : "Absent"}`, "ok");
+    } catch (err) {
+      cell.classList.replace(newPresent ? "P" : "A", isPresent ? "P" : "A");
+      cell.textContent = isPresent ? "P" : "A";
+      if (student) {
+        const dateSet = lectureType === "TH" ? student.thDates : student.prDates;
+        isPresent ? dateSet.add(date) : dateSet.delete(date);
+      }
+      showToast(`Failed to update: ${err.message}`, "err");
+    } finally {
+      delete cell.dataset.saving;
+      cell.classList.remove("att-saving");
+    }
+  }
+
+  function updateRowStats(roll) {
+    const student = currentRows.find(r => r.roll === roll);
+    if (!student) return;
+
+    if (currentHasTH) {
+      const thAtt     = currentThDates.filter(d => student.thDates.has(d)).length;
+      const thPct     = currentThDates.length ? Math.round((thAtt / currentThDates.length) * 100) : null;
+      const thPctCell = document.querySelector(`[data-th-pct="${roll}"]`);
+      if (thPctCell) { thPctCell.className = pctCls(thPct); thPctCell.textContent = thPct !== null ? thPct + "%" : "N/A"; }
+    }
+
+    if (currentHasPR) {
+      const prAtt     = currentPrDates.filter(d => student.prDates.has(d)).length;
+      const prPct     = currentPrDates.length ? Math.round((prAtt / currentPrDates.length) * 100) : null;
+      const prPctCell = document.querySelector(`[data-pr-pct="${roll}"]`);
+      if (prPctCell) { prPctCell.className = pctCls(prPct); prPctCell.textContent = prPct !== null ? prPct + "%" : "N/A"; }
+    }
+
+    if (currentHasTH && currentHasPR) {
+      const totLec = currentThDates.length + currentPrDates.length;
+      const totAtt = currentThDates.filter(d => student.thDates.has(d)).length +
+                     currentPrDates.filter(d => student.prDates.has(d)).length;
+      const ovPct  = totLec ? Math.round((totAtt / totLec) * 100) : null;
+      const ovCell = document.querySelector(`[data-ov-pct="${roll}"]`);
+      if (ovCell) { ovCell.className = pctCls(ovPct); ovCell.textContent = ovPct !== null ? ovPct + "%" : "N/A"; }
+    }
+  }
+
+
+  /* ── Summary ── */
+
+  function renderSummary() {
+    const { length: total } = currentRows;
+    if (!total) return;
+
+    const items = [["Students", total]];
+    if (currentHasTH) items.push(["TH Lectures", currentThDates.length]);
+    if (currentHasPR) items.push(["PR Lectures", currentPrDates.length]);
+
+    $("summary").style.display = "";
+    $("summary").innerHTML = items
+      .map(([l, v]) => `<div class="sum-item"><span class="sum-val">${v}</span><span class="sum-lbl">${l}</span></div>`)
+      .join("");
+  }
+
+
+  /* ── Toast ── */
+
+  let toastTimer;
+  function showToast(msg, type = "ok") {
+    const t = $("saveToast");
+    t.textContent   = msg;
+    t.className     = `save-toast save-toast-${type}`;
+    t.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.display = "none"; }, 2500);
+  }
+
+
+  /* ── Export ── */
+
+  async function exportExcel() {
+    const id = role === "subject_teacher" ? activeSubject?._id : $("fSubject").value;
     if (!id) return alert("Select a subject to export.");
 
     const range = $("fRange").value;
-    let url = `${API}/export/${id}`;
-    if (range === "custom") {
-      const from = $("fFrom").value, to = $("fTo").value;
-      url += `?from=${from}&to=${to}`;
-    } else {
-      url += `?range=${range}`;
-    }
-    window.open(url, "_blank");
-  }
+    const qs    = range === "custom"
+      ? `?from=${$("fFrom").value}&to=${$("fTo").value}`
+      : `?range=${range}`;
 
-  function fmtDate(iso) {
-    const [y, m, d] = iso.split("-");
-    return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]}`;
+    try {
+      const res = await fetch(`${API}/export/${id}${qs}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return alert(`Export failed: ${err.error || res.statusText}`);
+      }
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const match       = disposition.match(/filename[^;=\n]*=['"]?([^'";\n]+)['"]?/i);
+      const filename    = match ? match[1] : "attendance_export.xlsx";
+      const blobUrl     = URL.createObjectURL(await res.blob());
+      const a = Object.assign(document.createElement("a"), { href: blobUrl, download: filename });
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Export failed. Please try again.");
+    }
   }
 
   init();

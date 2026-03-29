@@ -3,467 +3,94 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Attendance QR — Teacher Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<title>AttendQR — Teacher Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg:        #07070d;
-  --surface:   #0f0f1a;
-  --card:      #161620;
-  --border:    #2a2a3d;
-  --accent:    #7c6aff;
-  --accent2:   #ff6a9b;
-  --text:      #e8e8f0;
-  --muted:     #6b6b85;
-  --success:   #4ade80;
-  --warn:      #fbbf24;
-  --danger:    #f87171;
-  --th-color:  #60a5fa;
-  --pr-color:  #f472b6;
-}
-
-body {
-  font-family: 'Syne', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow-x: hidden;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(124,106,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124,106,255,.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  top: -40%; left: -20%;
-  width: 70vw; height: 70vw;
-  background: radial-gradient(circle, rgba(124,106,255,.07) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-  animation: pulse 8s ease-in-out infinite alternate;
-}
-
-@keyframes pulse { from { opacity:.5; transform:scale(1); } to { opacity:1; transform:scale(1.08); } }
-
-.wrap {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 520px;
-  padding: 1.5rem;
-}
-
-/* ── LOGIN ── */
-.login-box {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2.5rem;
-  animation: slideUp .5s cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes slideUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
-
-.logo-row {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  margin-bottom: 2rem;
-}
-
-.logo-icon {
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem;
-}
-
-.logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -.02em; }
-.logo-sub  { font-size: .7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
-
-h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .4rem; }
-.sub { font-size: .85rem; color: var(--muted); margin-bottom: 2rem; }
-
-.field { margin-bottom: 1.2rem; }
-label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
-
-input {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: .75rem 1rem;
-  color: var(--text);
-  font-family: 'Syne', sans-serif;
-  font-size: .9rem;
-  outline: none;
-  transition: border-color .2s, box-shadow .2s;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(124,106,255,.15);
-}
-
-.btn {
-  width: 100%;
-  padding: .85rem;
-  border: none;
-  border-radius: 10px;
-  font-family: 'Syne', sans-serif;
-  font-size: .95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  letter-spacing: .02em;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), #5b4fd4);
-  color: #fff;
-}
-.btn-primary:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,255,.35); }
-.btn-primary:active { transform: translateY(0); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.error-msg {
-  background: rgba(248,113,113,.1);
-  border: 1px solid rgba(248,113,113,.3);
-  color: var(--danger);
-  border-radius: 8px;
-  padding: .65rem 1rem;
-  font-size: .82rem;
-  margin-bottom: 1rem;
-  display: none;
-}
-
-/* ── QR SCREEN ── */
-.qr-screen { display: none; animation: slideUp .45s cubic-bezier(.16,1,.3,1) both; }
-
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.user-badge {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 50px;
-  padding: .4rem .9rem .4rem .5rem;
-}
-
-.avatar {
-  width: 30px; height: 30px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .75rem; font-weight: 700;
-}
-
-.user-name  { font-size: .82rem; font-weight: 600; }
-.role-badge {
-  font-size: .6rem;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--accent);
-  background: rgba(124,106,255,.12);
-  border: 1px solid rgba(124,106,255,.25);
-  border-radius: 4px;
-  padding: 1px 5px;
-  margin-left: 4px;
-}
-
-.logout-btn {
-  background: none; border: none; color: var(--muted);
-  font-size: .75rem; cursor: pointer; font-family: 'Syne', sans-serif;
-  padding: .3rem .6rem; border-radius: 6px; transition: color .2s;
-}
-.logout-btn:hover { color: var(--danger); }
-
-.date-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .72rem;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: .3rem .8rem;
-  margin-bottom: 1rem;
-}
-
-/* Subject selector */
-.selector-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 1.2rem;
-}
-
-.selector-card h3 {
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--muted);
-  margin-bottom: 1rem;
-}
-
-.subject-grid { display: grid; gap: .6rem; }
-
-.subject-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: .9rem 1rem;
-  cursor: pointer;
-  transition: all .2s;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-}
-
-.subject-item:hover { border-color: var(--accent); background: rgba(124,106,255,.06); }
-.subject-item.active { border-color: var(--accent); background: rgba(124,106,255,.12); box-shadow: 0 0 0 1px var(--accent); }
-
-.subj-info { flex: 1; min-width: 0; }
-.subj-name { font-size: .9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.subj-meta { font-size: .72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
-
-.type-badge {
-  font-size: .65rem; font-weight: 700;
-  padding: .2rem .55rem; border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  flex-shrink: 0;
-}
-.badge-TH   { background: rgba(96,165,250,.15);  color: var(--th-color); border: 1px solid rgba(96,165,250,.3); }
-.badge-PR   { background: rgba(244,114,182,.15); color: var(--pr-color); border: 1px solid rgba(244,114,182,.3); }
-.badge-THPR { background: rgba(124,106,255,.15); color: var(--accent);   border: 1px solid rgba(124,106,255,.3); }
-
-/* lecture type toggle */
-.lt-toggle { display: flex; gap: .5rem; margin-top: .9rem; }
-
-.lt-btn {
-  flex: 1; padding: .55rem;
-  border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface); cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .8rem; font-weight: 500;
-  color: var(--muted); transition: all .2s;
-}
-.lt-btn.active-th { background: rgba(96,165,250,.15); border-color: var(--th-color); color: var(--th-color); }
-.lt-btn.active-pr { background: rgba(244,114,182,.15); border-color: var(--pr-color); color: var(--pr-color); }
-
-/* QR card */
-.qr-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.5rem;
-  text-align: center;
-  display: none;
-}
-.qr-card.visible { display: block; }
-
-.qr-label {
-  font-size: .7rem; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted);
-  font-weight: 600; margin-bottom: 1rem;
-}
-
-.qr-wrap {
-  display: inline-flex;
-  align-items: center; justify-content: center;
-  background: #fff; border-radius: 16px; padding: 14px;
-  position: relative;
-  box-shadow: 0 0 40px rgba(124,106,255,.2);
-}
-
-#qrcode canvas, #qrcode img { display: block; border-radius: 4px; }
-
-.refresh-ring {
-  position: absolute; inset: -7px;
-  border-radius: 24px; pointer-events: none;
-}
-
-.refresh-ring svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-.ring-track { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 3; }
-.ring-prog  { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .95s linear; }
-
-.qr-footer {
-  margin-top: 1rem;
-  display: flex; align-items: center; justify-content: space-between;
-}
-
-.qr-subject-label { font-size: .82rem; font-weight: 700; text-align: left; }
-
-.timer-badge {
-  font-family: 'JetBrains Mono', monospace; font-size: .75rem;
-  color: var(--muted); background: var(--surface);
-  border: 1px solid var(--border); padding: .3rem .7rem;
-  border-radius: 20px; display: flex; align-items: center; gap: .4rem;
-  flex-shrink: 0;
-}
-
-.timer-dot {
-  width: 6px; height: 6px; background: var(--success);
-  border-radius: 50%; animation: blink 1s ease-in-out infinite;
-}
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-
-.qr-hint {
-  margin-top: .75rem; font-size: .65rem; color: var(--muted);
-  font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.5;
-  background: var(--surface); border-radius: 8px; padding: .6rem .75rem;
-  border: 1px solid var(--border);
-}
-
-.empty-state {
-  padding: 2.5rem 1rem; text-align: center;
-  color: var(--muted); font-size: .85rem; line-height: 1.7;
-}
-.empty-state .icon { font-size: 2rem; margin-bottom: .75rem; opacity: .4; }
-
-.loading-spin {
-  width: 22px; height: 22px;
-  border: 2px solid var(--border); border-top-color: var(--accent);
-  border-radius: 50%; animation: spin .7s linear infinite;
-  margin: 1.5rem auto;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
+<link rel="stylesheet" href="dashboard.css"/>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
 
   <!-- ── LOGIN SCREEN ── -->
-  <div class="login-box" id="loginScreen">
-    <div class="logo-row">
-      <div class="logo-icon">📋</div>
+  <div id="loginScreen">
+    <div class="header">
       <div>
-        <div class="logo-text">AttendQR</div>
-        <div class="logo-sub">TEACHER PORTAL</div>
+        <div class="header-label">Teacher Portal</div>
+        <h1>AttendQR</h1>
       </div>
     </div>
 
-    <h2>Sign in</h2>
-    <p class="sub">Use your institutional teacher account to continue</p>
-
-    <div class="error-msg" id="loginError"></div>
-
-    <div class="field">
-      <label>Email</label>
+    <div class="section">
+      <div class="section-label">Sign In</div>
+      <div class="msg-err" id="loginError"></div>
       <input type="email" id="emailInput" placeholder="teacher@college.edu" autocomplete="username"/>
+      <input type="password" id="passInput" placeholder="Password" autocomplete="current-password"/>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
     </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="passInput" placeholder="••••••••" autocomplete="current-password"/>
-    </div>
-
-    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
   </div>
 
   <!-- ── QR SCREEN ── -->
-  <div class="qr-screen" id="qrScreen">
+  <div id="qrScreen">
 
     <div class="top-bar">
-      <div class="logo-row" style="margin:0;">
-        <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;">📋</div>
-        <span class="logo-text" style="font-size:.95rem;">AttendQR</span>
+      <div>
+        <div class="header-label">Teacher Portal</div>
+        <div style="font-size:21px;font-weight:300;letter-spacing:-.03em;">AttendQR</div>
       </div>
-      <div style="display:flex;align-items:center;gap:.65rem;">
-        <div class="user-badge">
-          <div class="avatar" id="avatarEl"></div>
-          <span class="user-name" id="userNameEl"></span>
-          <span class="role-badge" id="roleBadgeEl"></span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="user-pill">
+          <span id="userNameEl"></span>
+          <span class="role-tag" id="roleBadgeEl"></span>
         </div>
-        <button class="logout-btn" onclick="doLogout()">logout</button>
+        <button class="logout-btn" onclick="doLogout()">out</button>
       </div>
     </div>
 
-    <div><span class="date-chip">📅 <span id="dateChip"></span></span></div>
+    <span class="date-chip" id="dateChip"></span>
 
-    <!-- subject selector -->
-    <div class="selector-card">
-      <h3>Your Subjects</h3>
-      <div class="subject-grid" id="subjectGrid">
-        <div class="loading-spin"></div>
-      </div>
-
-      <!-- shown only for TH+PR subjects -->
+    <!-- Subject selector -->
+    <div class="section">
+      <div class="section-label">Your Subjects</div>
+      <div id="subjectGrid"><div class="loading-spin"></div></div>
       <div class="lt-toggle" id="ltToggle" style="display:none;">
-        <button class="lt-btn" id="ltTH" onclick="setLectureType('TH')">📘 TH — Theory</button>
-        <button class="lt-btn" id="ltPR" onclick="setLectureType('PR')">🔬 PR — Practical</button>
+        <button class="lt-btn" id="ltTH" onclick="setLectureType('TH')">TH — Theory</button>
+        <button class="lt-btn" id="ltPR" onclick="setLectureType('PR')">PR — Practical</button>
       </div>
     </div>
 
     <!-- QR display -->
     <div class="qr-card" id="qrCard">
-      <div class="qr-label">Scan to Mark Attendance</div>
-
+      <div class="section-label" style="margin-bottom:14px;">Scan to Mark Attendance</div>
       <div class="qr-wrap" id="qrWrap">
         <div id="qrcode"></div>
         <div class="refresh-ring">
           <svg viewBox="0 0 108 108">
-            <rect class="ring-track" x="3" y="3" width="102" height="102" rx="21"/>
-            <rect class="ring-prog"  id="ringProg" x="3" y="3" width="102" height="102" rx="21"/>
+            <rect class="ring-track" x="3" y="3" width="102" height="102" rx="15"/>
+            <rect class="ring-prog" id="ringProg" x="3" y="3" width="102" height="102" rx="15"/>
           </svg>
         </div>
       </div>
-
       <div class="qr-footer">
-        <span class="qr-subject-label" id="qrSubjectLabel"></span>
-        <span class="timer-badge">
+        <div class="qr-subject-label" id="qrSubjectLabel"></div>
+        <div class="timer-badge">
           <span class="timer-dot"></span>
           <span id="timerLabel">30s</span>
-        </span>
+        </div>
       </div>
-
-      <div class="qr-hint" id="qrHint"></div>
+      <div class="qr-url" id="qrHint"></div>
     </div>
 
     <div class="empty-state" id="emptyState" style="display:none;">
-      <div class="icon">📭</div>
-      No subjects are assigned to your account yet.<br/>
-      Contact your HOD or admin to get subjects assigned.
+      No subjects assigned to your account.<br/>Contact your HOD or admin.
     </div>
 
   </div>
 </div>
 
 <script>
-/* ── CONFIG ── */
 const BASE_URL    = window.location.origin;
 const REFRESH_SEC = 30;
-
-/* ── State ── */
+document.getElementById("qrHint").style.display = "none";
 let token        = localStorage.getItem('qr_token') || null;
 let userData     = JSON.parse(localStorage.getItem('qr_user') || 'null');
 let subjects     = [];
@@ -472,11 +99,9 @@ let lectureType  = 'TH';
 let refreshTimer = null;
 let countDown    = REFRESH_SEC;
 
-/* ── Ring setup (perimeter of rounded rect approx 396px) ── */
 const PERIM = 396;
-let ringEl;  // set after DOM ready
+let ringEl;
 
-/* ── Init ── */
 document.addEventListener('DOMContentLoaded', () => {
   ringEl = document.getElementById('ringProg');
   ringEl.style.strokeDasharray  = PERIM;
@@ -484,10 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setDateChip();
 
-  if (token && userData) {
-    showQrScreen();
-    loadSubjects();
-  }
+  if (token && userData) { showQrScreen(); loadSubjects(); }
 
   document.getElementById('emailInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('passInput').focus();
@@ -503,7 +125,6 @@ function setDateChip() {
   });
 }
 
-/* ── Auth ── */
 async function doLogin() {
   const email    = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passInput').value;
@@ -513,29 +134,25 @@ async function doLogin() {
   errEl.style.display = 'none';
   if (!email || !password) { showErr('Please enter email and password.'); return; }
 
-  btn.textContent = 'Signing in…';
-  btn.disabled    = true;
+  btn.textContent = 'Signing in…'; btn.disabled = true;
 
   try {
     const res  = await fetch(`${BASE_URL}/auth/login`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
 
     if (!res.ok) {
       showErr(data.error || 'Login failed.');
-      btn.textContent = 'Sign In →'; btn.disabled = false;
-      return;
+      btn.textContent = 'Sign In'; btn.disabled = false; return;
     }
 
-    // Allow teacher-level roles only
     const allowed = ['subject_teacher', 'class_teacher', 'hod', 'admin'];
     if (!allowed.includes(data.role)) {
       showErr('This portal is for teachers only.');
-      btn.textContent = 'Sign In →'; btn.disabled = false;
-      return;
+      btn.textContent = 'Sign In'; btn.disabled = false; return;
     }
 
     token    = data.token;
@@ -543,53 +160,44 @@ async function doLogin() {
     localStorage.setItem('qr_token', token);
     localStorage.setItem('qr_user',  JSON.stringify(userData));
 
-    showQrScreen();
-    loadSubjects();
+    showQrScreen(); loadSubjects();
 
   } catch {
     showErr('Could not reach server. Check your connection.');
-    btn.textContent = 'Sign In →'; btn.disabled = false;
+    btn.textContent = 'Sign In'; btn.disabled = false;
   }
 }
 
 function doLogout() {
   clearInterval(refreshTimer);
   token = null; userData = null; selectedSubj = null; subjects = [];
-  localStorage.removeItem('qr_token');
-  localStorage.removeItem('qr_user');
+  localStorage.removeItem('qr_token'); localStorage.removeItem('qr_user');
 
-  document.getElementById('qrScreen').style.display   = 'none';
+  document.getElementById('qrScreen').style.display = 'none';
   const ls = document.getElementById('loginScreen');
-  ls.style.display   = 'block';
-  ls.style.animation = 'none';
-  void ls.offsetWidth;
-  ls.style.animation = '';
+  ls.style.display = 'block'; ls.style.animation = 'none';
+  void ls.offsetWidth; ls.style.animation = '';
 
-  document.getElementById('emailInput').value     = '';
-  document.getElementById('passInput').value      = '';
-  document.getElementById('loginBtn').textContent = 'Sign In →';
+  document.getElementById('emailInput').value = '';
+  document.getElementById('passInput').value  = '';
+  document.getElementById('loginBtn').textContent = 'Sign In';
   document.getElementById('loginBtn').disabled    = false;
   document.getElementById('loginError').style.display = 'none';
 }
 
 function showErr(msg) {
   const el = document.getElementById('loginError');
-  el.textContent   = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
 }
 
-/* ── Screen ── */
 function showQrScreen() {
   document.getElementById('loginScreen').style.display = 'none';
   const qs = document.getElementById('qrScreen');
   qs.style.display = 'block';
-
-  document.getElementById('userNameEl').textContent = userData.name;
-  document.getElementById('avatarEl').textContent   = userData.name.charAt(0).toUpperCase();
+  document.getElementById('userNameEl').textContent  = userData.name;
   document.getElementById('roleBadgeEl').textContent = userData.role.replace('_', ' ');
 }
 
-/* ── Load subjects via teacher token ── */
 async function loadSubjects() {
   const grid = document.getElementById('subjectGrid');
   grid.innerHTML = '<div class="loading-spin"></div>';
@@ -599,58 +207,48 @@ async function loadSubjects() {
     const res = await fetch(`${BASE_URL}/subjects`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-
     if (res.status === 401) { doLogout(); return; }
     subjects = await res.json();
-
     grid.innerHTML = '';
 
     if (!subjects.length) {
-      document.getElementById('emptyState').style.display = 'block';
-      return;
+      document.getElementById('emptyState').style.display = 'block'; return;
     }
 
-    subjects.forEach((s, i) => {
+    subjects.forEach(s => {
       const item = document.createElement('div');
       item.className  = 'subject-item';
       item.dataset.id = s._id;
-      item.style.animationDelay = `${i * 60}ms`;
-
       const badgeCls = s.type === 'TH+PR' ? 'badge-THPR' : s.type === 'PR' ? 'badge-PR' : 'badge-TH';
-
       item.innerHTML = `
         <div class="subj-info">
           <div class="subj-name">${s.name}</div>
-          <div class="subj-meta">${s.code} &nbsp;·&nbsp; Y${s.year} S${s.semester} &nbsp;·&nbsp; ${s.divisionName}</div>
+          <div class="subj-meta">${s.code} · Y${s.year} S${s.semester} · ${s.divisionName}</div>
         </div>
         <span class="type-badge ${badgeCls}">${s.type}</span>
       `;
-
       item.addEventListener('click', () => selectSubject(s));
       grid.appendChild(item);
     });
 
   } catch {
-    grid.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>Failed to load subjects. Please try again.</div>`;
+    grid.innerHTML = `<div class="empty-state">Failed to load subjects.</div>`;
   }
 }
 
-/* ── Subject selection ── */
 function selectSubject(subj) {
   selectedSubj = subj;
-
   document.querySelectorAll('.subject-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.subject-item[data-id="${subj._id}"]`).classList.add('active');
 
   const ltToggle = document.getElementById('ltToggle');
   if (subj.type === 'TH+PR') {
     ltToggle.style.display = 'flex';
-    setLectureType(lectureType);   // re-apply current or default
+    setLectureType(lectureType);
   } else {
     ltToggle.style.display = 'none';
     lectureType = subj.type === 'PR' ? 'PR' : 'TH';
   }
-
   generateQR();
 }
 
@@ -661,83 +259,60 @@ function setLectureType(lt) {
   if (selectedSubj) generateQR();
 }
 
-/* ── QR generation & auto-refresh ── */
-function todayISO() {
-  return new Date().toISOString().split('T')[0];
-}
+function todayISO() { return new Date().toISOString().split('T')[0]; }
 
 function buildCheckinURL(subj, lt) {
-  const params = new URLSearchParams({
-    subjectId:   subj._id,
-    lectureType: lt,
-    date:        todayISO()
-  });
+  const params = new URLSearchParams({ subjectId: subj._id, lectureType: lt, date: todayISO() });
   return `${BASE_URL}/checkin?${params.toString()}`;
 }
 
 function generateQR() {
   if (!selectedSubj) return;
   clearInterval(refreshTimer);
-
   document.getElementById('qrCard').classList.add('visible');
-
   const url = buildCheckinURL(selectedSubj, lectureType);
-  renderQR(url);
-  updateLabels(url);
-  startCountdown();
+  renderQR(url); updateLabels(url); startCountdown();
 }
 
 function renderQR(url) {
   const container = document.getElementById('qrcode');
   container.innerHTML = '';
   new QRCode(container, {
-    text:         url,
-    width:        224,
-    height:       224,
-    colorDark:    '#0d0d15',
-    colorLight:   '#ffffff',
+    text: url, width: 224, height: 224,
+    colorDark: '#0d0d0d', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H
   });
 }
 
 function updateLabels(url) {
   const ispr  = lectureType === 'PR';
-  const color = ispr ? 'var(--pr-color)' : 'var(--th-color)';
-  const label = ispr ? '🔬 Practical' : '📘 Theory';
+  const typeColor = ispr ? 'var(--pr-color)' : 'var(--th-color)';
+  const typeLabel = ispr ? 'Practical' : 'Theory';
 
   document.getElementById('qrSubjectLabel').innerHTML =
-    `<span style="color:${color};font-size:.75rem;">${label}</span><br>
-     <strong>${selectedSubj.code}</strong> — ${selectedSubj.name} <span style="color:var(--muted);font-size:.75rem;">(${selectedSubj.divisionName})</span>`;
+    `${selectedSubj.code} — ${selectedSubj.name}<small style="color:${typeColor}">${typeLabel} · ${selectedSubj.divisionName}</small>`;
 
   document.getElementById('qrHint').textContent = url;
 }
 
 function startCountdown() {
-  countDown = REFRESH_SEC;
-  tickTimer();
+  countDown = REFRESH_SEC; tickTimer();
   refreshTimer = setInterval(() => {
-    countDown--;
-    tickTimer();
+    countDown--; tickTimer();
     if (countDown <= 0) {
       const url = buildCheckinURL(selectedSubj, lectureType);
-      renderQR(url);
-      updateLabels(url);
-      countDown = REFRESH_SEC;
+      renderQR(url); updateLabels(url); countDown = REFRESH_SEC;
     }
   }, 1000);
 }
 
 function tickTimer() {
   document.getElementById('timerLabel').textContent = `${countDown}s`;
-
-  // Ring progress
   const frac = countDown / REFRESH_SEC;
   ringEl.style.strokeDashoffset = PERIM * (1 - frac);
-
-  // Colour gradient as time runs out
-  if (frac > .5)       ringEl.style.stroke = 'var(--accent)';
+  if (frac > .5)       ringEl.style.stroke = 'var(--ok)';
   else if (frac > .25) ringEl.style.stroke = 'var(--warn)';
-  else                  ringEl.style.stroke = 'var(--danger)';
+  else                 ringEl.style.stroke = 'var(--err)';
 }
 </script>
 </body>
