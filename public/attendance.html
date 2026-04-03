@@ -6,6 +6,12 @@
   <title>Attendance</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    /* Vertical divider */
+    .th-divider {
+      border-right: 1.5px solid #c0c0c8 !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -21,33 +27,26 @@
 </nav>
 
 <div class="page">
-
   <div class="role-strip" id="roleStrip" style="display:none;"></div>
   <div class="sub-bar"   id="subBar"    style="display:none;"></div>
 
   <div class="filter-bar">
-    <select id="fSubject" style="display:none;" onchange="onFilterChange()">
-      <option value="">All Subjects</option>
-    </select>
-    <select id="fYear" style="display:none;" onchange="onFilterChange()">
-      <option value="">All Years</option>
-    </select>
-    <select id="fSem" style="display:none;" onchange="onFilterChange()">
+    <select id="fSubject" style="display:none;"></select>
+    <select id="fYear"    style="display:none;"></select>
+    <select id="fSem"     style="display:none;">
       <option value="">All Sems</option>
       <option value="1">Sem 1</option>
       <option value="2">Sem 2</option>
     </select>
-    <select id="fDiv" style="display:none;" onchange="onFilterChange()">
-      <option value="">All Divisions</option>
-    </select>
-    <select id="fRange" onchange="onFilterChange()">
+    <select id="fDiv" style="display:none;"></select>
+    <select id="fRange">
       <option value="week">Last 1 Week</option>
       <option value="2weeks">Last 2 Weeks</option>
       <option value="month">Last 1 Month</option>
       <option value="custom">Custom range</option>
     </select>
-    <input type="date" id="fFrom" style="display:none;" onchange="onFilterChange()" />
-    <input type="date" id="fTo"   style="display:none;" onchange="onFilterChange()" />
+    <input type="date" id="fFrom" style="display:none;" />
+    <input type="date" id="fTo"   style="display:none;" />
     <button class="btn btn-outline" onclick="exportExcel()">↓ Export</button>
   </div>
 
@@ -60,13 +59,12 @@
     </div>
     <div class="summary" id="summary" style="display:none;"></div>
   </div>
-
 </div>
 
 <div id="saveToast" class="save-toast" style="display:none;"></div>
 
 <script>
-  const API = "https://attendance-version-1.vercel.app";
+  const API   = "https://attendance-version-1.vercel.app";
   const token = localStorage.getItem("token");
   const role  = localStorage.getItem("role");
 
@@ -75,22 +73,20 @@
 
   const hdrs = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function fmtDate(iso) { const [, m, d] = iso.split("-"); return `${d} ${MONTHS[+m - 1]}`; }
-  function pctCls(p)    { return p === null ? "" : p >= 75 ? "pct-ok" : p >= 60 ? "pct-warn" : "pct-bad"; }
-  function $(id)        { return document.getElementById(id); }
-  function logout()     { localStorage.clear(); window.location.href = "login.html"; }
+  const MONTHS  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmtDate = iso => { const [,m,d] = iso.split("-"); return `${d} ${MONTHS[+m-1]}`; };
+  const pctCls  = p => p === null ? "" : p >= 75 ? "pct-ok" : p >= 60 ? "pct-warn" : "pct-bad";
+  const $       = id => document.getElementById(id);
 
+  function logout() { localStorage.clear(); window.location.href = "login.html"; }
+
+  // ── Shared state ──
   let dept          = null;
   let allSubjects   = [];
   let activeSubject = null;
+  let state         = { rows: [], thDates: [], prDates: [], hasTH: false, hasPR: false };
 
-  let currentRows    = [];
-  let currentThDates = [];
-  let currentPrDates = [];
-  let currentHasTH   = false;
-  let currentHasPR   = false;
-
+  // ── Nav ──
   $("navName").textContent = localStorage.getItem("name") || "";
   if (role === "class_teacher") {
     $("navDot").classList.add("dot-yellow");
@@ -100,22 +96,31 @@
     $("navTitle").textContent = "Subject Teacher";
   }
 
+  // ── Range filter ──
   $("fRange").addEventListener("change", () => {
     const custom = $("fRange").value === "custom";
-    $("fFrom").style.display = custom ? "" : "none";
-    $("fTo").style.display   = custom ? "" : "none";
-    if (!custom) onFilterChange();
+    $("fFrom").style.display = $("fTo").style.display = custom ? "" : "none";
+    if (!custom) loadAttendance();
   });
+  ["fSubject","fYear","fSem","fDiv","fFrom","fTo"].forEach(id =>
+    $(id).addEventListener("change", loadAttendance)
+  );
 
+  // ── Fetch helper ──
+  async function safeFetch(path) {
+    try {
+      const res = await fetch(`${API}${path}`, { headers: hdrs });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
+  }
 
-  /* ── Init ── */
-
+  // ── Init ──
   async function init() {
     try {
-      if (role === "class_teacher") await initClassTeacher();
-      else                          await initSubjectTeacher();
+      role === "class_teacher" ? await initClassTeacher() : await initSubjectTeacher();
     } catch (err) {
-      console.error("Init error:", err);
       $("tBody").innerHTML = `<tr><td class="empty">Failed to load: ${err.message}</td></tr>`;
     }
   }
@@ -132,9 +137,9 @@
       <span class="label">Access</span>
       <span class="val">All subjects, all years</span>`;
 
-    allSubjects = await fetch(`${API}/subjects?departmentId=${deptId}`, { headers: hdrs }).then(r => r.json());
+    allSubjects = await safeFetch(`/subjects?departmentId=${deptId}`);
 
-    ["fSubject", "fYear", "fSem", "fDiv"].forEach(id => $(id).style.display = "");
+    ["fSubject","fYear","fSem","fDiv"].forEach(id => $(id).style.display = "");
 
     $("fSubject").innerHTML = `<option value="">All Subjects</option>` +
       allSubjects.map(s =>
@@ -157,26 +162,25 @@
   }
 
   async function initSubjectTeacher() {
-    allSubjects = await fetch(`${API}/subjects`, { headers: hdrs }).then(r => r.json());
+    allSubjects = await safeFetch("/subjects");
 
     if (!allSubjects.length) {
       $("tBody").innerHTML = `<tr><td class="empty">No subjects assigned yet.</td></tr>`;
       return;
     }
 
-    $("subBar").style.display = "";
-    $("subBar").innerHTML = allSubjects.map(s =>
-      `<button class="sub-pill" data-id="${s._id}" onclick="selectSubject('${s._id}')">
-        ${s.code} · Div ${s.divisionName} · Y${s.year}S${s.semester} · ${s.type}
-      </button>`
-    ).join("");
-
-    $("roleStrip").style.display = "";
+    $("roleStrip").style.display = $("subBar").style.display = "";
     $("roleStrip").innerHTML = `
       <span class="label">Role</span><span class="val">Subject Teacher</span>
       <span class="sep">·</span>
       <span class="label">Subjects</span>
       <span class="val">${allSubjects.length} assigned</span>`;
+
+    $("subBar").innerHTML = allSubjects.map(s =>
+      `<button class="sub-pill" data-id="${s._id}" onclick="selectSubject('${s._id}')">
+        ${s.code} · Div ${s.divisionName} · Y${s.year}S${s.semester} · ${s.type}
+      </button>`
+    ).join("");
 
     selectSubject(allSubjects[0]._id);
   }
@@ -197,226 +201,188 @@
     loadAttendance();
   }
 
-
-  /* ── Helpers ── */
-
-  // Always returns an array — never throws
-  async function safeFetch(url) {
-    try {
-      const res  = await fetch(url, { headers: hdrs });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    } catch {
-      return [];
-    }
-  }
-
-
-  /* ── Load Attendance ── */
-
-  function onFilterChange() { loadAttendance(); }
-
+  // ── Load Attendance ──
   async function loadAttendance() {
     $("tBody").innerHTML = `<tr><td class="empty">Loading…</td></tr>`;
     $("tHead").innerHTML = "";
     $("summary").style.display = "none";
 
     try {
-      const attParams  = new URLSearchParams();
+      const params     = new URLSearchParams();
       let   divisionId = null;
 
       if (role === "subject_teacher") {
         if (!activeSubject) return;
-        attParams.set("subjectId",  activeSubject._id);
-        attParams.set("divisionId", activeSubject.divisionId);
+        params.set("subjectId",  activeSubject._id);
+        params.set("divisionId", activeSubject.divisionId);
         divisionId = activeSubject.divisionId;
       } else {
         const subId = $("fSubject").value;
-        const year  = $("fYear").value;
-        const sem   = $("fSem").value;
         const divId = $("fDiv").value;
 
         if (subId) {
-          attParams.set("subjectId", subId);
+          params.set("subjectId", subId);
           const sub = allSubjects.find(s => s._id === subId);
           if (!divId && sub?.divisionId) {
-            attParams.set("divisionId", sub.divisionId);
+            params.set("divisionId", sub.divisionId);
             divisionId = sub.divisionId;
           }
         }
-        if (year)  attParams.set("year", year);
-        if (sem)   attParams.set("semester", sem);
-        if (divId) { attParams.set("divisionId", divId); divisionId = divId; }
+        const year = $("fYear").value, sem = $("fSem").value;
+        if (year)  params.set("year", year);
+        if (sem)   params.set("semester", sem);
+        if (divId) { params.set("divisionId", divId); divisionId = divId; }
       }
 
       const range = $("fRange").value;
       if (range === "custom") {
         const from = $("fFrom").value, to = $("fTo").value;
-        if (from) attParams.set("from", from);
-        if (to)   attParams.set("to",   to);
+        if (from) params.set("from", from);
+        if (to)   params.set("to",   to);
       } else {
-        attParams.set("range", range);
+        params.set("range", range);
       }
 
-      // Both fetches are safe — roster returns [] if divisionId is null or request fails
-      const rosterUrl = divisionId ? `${API}/students?divisionId=${divisionId}` : null;
-
-      const [data, roster] = await Promise.all([
-        safeFetch(`${API}/attendance?${attParams}`),
-        rosterUrl ? safeFetch(rosterUrl) : Promise.resolve([]),
+      const [records, roster] = await Promise.all([
+        safeFetch(`/attendance?${params}`),
+        divisionId ? safeFetch(`/students?divisionId=${divisionId}`) : Promise.resolve([]),
       ]);
 
-      if (!data.length && !roster.length) {
+      if (!records.length && !roster.length) {
         $("tBody").innerHTML = `<tr><td class="empty">No records found for this selection.</td></tr>`;
         return;
       }
 
-      renderTable(data, roster);
-
+      renderTable(records, roster);
     } catch (err) {
-      console.error("loadAttendance error:", err);
       $("tBody").innerHTML = `<tr><td class="empty">Error: ${err.message}</td></tr>`;
     }
   }
 
-
-  /* ── Render Table ── */
-
+  // ── Render Table ──
   function renderTable(records, roster) {
-    const thRecords = records.filter(r => r.lectureType === "TH");
-    const prRecords = records.filter(r => r.lectureType === "PR");
-    const hasTH     = thRecords.length > 0;
-    const hasPR     = prRecords.length > 0;
+    const thDates = [...new Set(records.filter(r => r.lectureType === "TH").map(r => r.date))].sort();
+    const prDates = [...new Set(records.filter(r => r.lectureType === "PR").map(r => r.date))].sort();
+    const hasTH   = thDates.length > 0;
+    const hasPR   = prDates.length > 0;
 
-    const thDates = [...new Set(thRecords.map(r => r.date))].sort();
-    const prDates = [...new Set(prRecords.map(r => r.date))].sort();
-
-    // Seed from roster first — all uploaded students appear even with zero attendance
-    const students = {};
-    (roster || []).forEach(s => {
-      students[String(s.roll)] = {
-        roll:    String(s.roll),
-        name:    s.name,
-        thDates: new Set(),
-        prDates: new Set(),
-      };
-    });
-
-    // Overlay attendance records — also catches QR-only students not in roster
+    // Build student map — roster first, then overlay attendance
+    const students = Object.fromEntries(
+      (roster || []).map(s => [String(s.roll), { roll: String(s.roll), name: s.name, thDates: new Set(), prDates: new Set() }])
+    );
     records.forEach(r => {
-      if (!students[r.studentRoll]) {
-        students[r.studentRoll] = {
-          roll:    r.studentRoll,
-          name:    r.studentName,
-          thDates: new Set(),
-          prDates: new Set(),
-        };
-      }
-      if (r.lectureType === "TH") students[r.studentRoll].thDates.add(r.date);
-      else                        students[r.studentRoll].prDates.add(r.date);
+      students[r.studentRoll] ??= { roll: r.studentRoll, name: r.studentName, thDates: new Set(), prDates: new Set() };
+      (r.lectureType === "TH" ? students[r.studentRoll].thDates : students[r.studentRoll].prDates).add(r.date);
     });
 
     const rows = Object.values(students).sort((a, b) => +a.roll - +b.roll);
+    state = { rows, thDates, prDates, hasTH, hasPR };
 
-    currentRows    = rows;
-    currentThDates = thDates;
-    currentPrDates = prDates;
-    currentHasTH   = hasTH;
-    currentHasPR   = hasPR;
-
-    // Roster exists but no lectures taken yet
+    // No lectures yet
     if (!hasTH && !hasPR) {
       $("tHead").innerHTML = `<tr><th>Roll</th><th>Name</th><th style="color:var(--ink-muted);font-weight:400;font-size:13px;">No lectures recorded yet</th></tr>`;
       $("tBody").innerHTML = rows.map(s =>
-        `<tr>
-          <td class="td-roll">${s.roll}</td>
-          <td>${s.name}</td>
-          <td style="color:var(--ink-faint);text-align:center;">—</td>
-        </tr>`
+        `<tr><td class="td-roll">${s.roll}</td><td>${s.name}</td><td style="color:var(--ink-faint);text-align:center;">—</td></tr>`
       ).join("");
       renderSummary();
       return;
     }
 
-    // Build headers
-    let headerHTML = "<tr><th>Roll</th><th>Name</th>";
-    if (hasTH) headerHTML += `<th colspan="${thDates.length}" class="th-group-th">TH — Theory</th>`;
-    if (hasPR) headerHTML += `<th colspan="${prDates.length}" class="th-group-pr">PR — Practical</th>`;
-    if (hasTH) headerHTML += `<th class="th-group-th">TH %</th>`;
-    if (hasPR) headerHTML += `<th class="th-group-pr">PR %</th>`;
-    if (hasTH && hasPR) headerHTML += "<th>Overall %</th>";
-    headerHTML += "</tr>";
+    const subjectId = activeSubject?._id || $("fSubject").value;
 
-    let dateRowHTML = "<tr><th></th><th></th>";
-    if (hasTH) dateRowHTML += thDates.map(d => `<th class="th-date-th">${fmtDate(d)}</th>`).join("");
-    if (hasPR) dateRowHTML += prDates.map(d => `<th class="th-date-pr">${fmtDate(d)}</th>`).join("");
-    if (hasTH) dateRowHTML += "<th></th>";
-    if (hasPR) dateRowHTML += "<th></th>";
-    if (hasTH && hasPR) dateRowHTML += "<th></th>";
-    dateRowHTML += "</tr>";
+    // attCell — divider = true puts border on the RIGHT of this cell
+    const attCell = (d, type, present, roll, name, divider = false) =>
+      `<td class="${present ? "P" : "A"} att-cell${divider ? " th-divider" : ""}"
+        data-roll="${roll}" data-name="${encodeURIComponent(name)}"
+        data-date="${d}" data-type="${type}" data-subject="${subjectId}"
+        onclick="toggleAttendance(this)" title="Click to toggle"
+      >${present ? "P" : "A"}</td>`;
 
-    $("tHead").innerHTML = headerHTML + dateRowHTML;
+    // ── Header row 1: group labels ──
+    // Divider 1: after TH — Theory group header  (only when both TH and PR exist)
+    // Divider 2: after PR — Practical group header (always, to cap that block)
+    const thGroupTh = hasTH
+      ? `<th${thDates.length > 1 ? ` colspan="${thDates.length}"` : ""}
+            class="th-group-th${hasPR ? " th-divider" : ""}"
+         >TH — Theory</th>`
+      : "";
+    const prGroupTh = hasPR
+      ? `<th${prDates.length > 1 ? ` colspan="${prDates.length}"` : ""}
+            class="th-group-th th-divider"
+         >PR — Practical</th>`
+      : "";
 
-    const editSubjectId = activeSubject?._id || $("fSubject").value;
+    // Divider 3: after PR% column header (before Overall %)
+    const pctCols = [
+      hasTH && `<th>TH %</th>`,
+      hasPR && `<th class="th-divider">PR %</th>`,
+      hasTH && hasPR && `<th>Overall %</th>`,
+    ].filter(Boolean).join("");
 
+    // ── Header row 2: individual date cells ──
+    // Divider 1 repeated: last TH date cell
+    // Divider 2 repeated: last PR date cell
+    // Divider 3 repeated: PR% placeholder cell
+    $("tHead").innerHTML =
+      `<tr><th>Roll</th><th>Name</th>${thGroupTh}${prGroupTh}${pctCols}</tr>` +
+      `<tr><th></th><th></th>` +
+      (hasTH ? thDates.map((d, i) =>
+        `<th class="th-date-th${(hasPR && i === thDates.length - 1) ? " th-divider" : ""}">${fmtDate(d)}</th>`
+      ).join("") : "") +
+      (hasPR ? prDates.map((d, i) =>
+        `<th class="th-date-pr${i === prDates.length - 1 ? " th-divider" : ""}">${fmtDate(d)}</th>`
+      ).join("") : "") +
+      (hasTH ? `<th></th>` : "") +
+      (hasPR ? `<th class="th-divider"></th>` : "") +
+      (hasTH && hasPR ? `<th></th>` : "") +
+      `</tr>`;
+
+    // ── Body rows ──
     $("tBody").innerHTML = rows.map(s => {
-      const thAtt      = thDates.filter(d => s.thDates.has(d)).length;
-      const prAtt      = prDates.filter(d => s.prDates.has(d)).length;
-      const thPct      = hasTH && thDates.length ? Math.round((thAtt / thDates.length) * 100) : null;
-      const prPct      = hasPR && prDates.length ? Math.round((prAtt / prDates.length) * 100) : null;
-      const totLec     = thDates.length + prDates.length;
-      const overallPct = totLec ? Math.round(((thAtt + prAtt) / totLec) * 100) : null;
-      const safeName   = encodeURIComponent(s.name);
+      const thAtt = thDates.filter(d => s.thDates.has(d)).length;
+      const prAtt = prDates.filter(d => s.prDates.has(d)).length;
+      const thPct = hasTH && thDates.length ? Math.round((thAtt / thDates.length) * 100) : null;
+      const prPct = hasPR && prDates.length ? Math.round((prAtt / prDates.length) * 100) : null;
+      const ovPct = (hasTH && hasPR && thDates.length + prDates.length)
+        ? Math.round(((thAtt + prAtt) / (thDates.length + prDates.length)) * 100) : null;
 
-      const attCell = (d, type, present) =>
-        `<td class="${present ? "P" : "A"} att-cell"
-          data-roll="${s.roll}"
-          data-name="${safeName}"
-          data-date="${d}"
-          data-type="${type}"
-          data-subject="${editSubjectId}"
-          onclick="toggleAttendance(this)"
-          title="Click to toggle"
-        >${present ? "P" : "A"}</td>`;
+      const mkPctCell = (val, attr, extraCls = "") =>
+        `<td class="${pctCls(val)}${extraCls ? " " + extraCls : ""}" data-${attr}="${s.roll}">${val !== null ? val + "%" : "N/A"}</td>`;
 
-      let html = `<td class="td-roll">${s.roll}</td><td>${s.name}</td>`;
-      if (hasTH) html += thDates.map(d => attCell(d, "TH", s.thDates.has(d))).join("");
-      if (hasPR) html += prDates.map(d => attCell(d, "PR", s.prDates.has(d))).join("");
-      if (hasTH) html += `<td class="${pctCls(thPct)}" data-th-pct="${s.roll}">${thPct !== null ? thPct + "%" : "N/A"}</td>`;
-      if (hasPR) html += `<td class="${pctCls(prPct)}" data-pr-pct="${s.roll}">${prPct !== null ? prPct + "%" : "N/A"}</td>`;
-      if (hasTH && hasPR) html += `<td class="${pctCls(overallPct)}" data-ov-pct="${s.roll}">${overallPct !== null ? overallPct + "%" : "N/A"}</td>`;
-
-      return `<tr>${html}</tr>`;
+      return `<tr>
+        <td class="td-roll">${s.roll}</td><td>${s.name}</td>
+        ${hasTH ? thDates.map((d, i) =>
+          attCell(d, "TH", s.thDates.has(d), s.roll, s.name, hasPR && i === thDates.length - 1)
+        ).join("") : ""}
+        ${hasPR ? prDates.map((d, i) =>
+          attCell(d, "PR", s.prDates.has(d), s.roll, s.name, i === prDates.length - 1)
+        ).join("") : ""}
+        ${hasTH ? mkPctCell(thPct, "th-pct") : ""}
+        ${hasPR ? mkPctCell(prPct, "pr-pct", "th-divider") : ""}
+        ${hasTH && hasPR ? mkPctCell(ovPct, "ov-pct") : ""}
+      </tr>`;
     }).join("");
 
     renderSummary();
   }
 
-
-  /* ── Toggle Attendance ── */
-
+  // ── Toggle Attendance ──
   async function toggleAttendance(cell) {
     if (cell.dataset.saving) return;
 
-    const roll        = cell.dataset.roll;
-    const name        = decodeURIComponent(cell.dataset.name);
-    const date        = cell.dataset.date;
-    const lectureType = cell.dataset.type;
-    const subjectId   = cell.dataset.subject;
-    const isPresent   = cell.classList.contains("P");
-    const newPresent  = !isPresent;
+    const { roll, date, type: lectureType, subject: subjectId } = cell.dataset;
+    const name       = decodeURIComponent(cell.dataset.name);
+    const isPresent  = cell.classList.contains("P");
+    const newPresent = !isPresent;
 
     cell.dataset.saving = "1";
     cell.classList.add("att-saving");
     cell.classList.replace(isPresent ? "P" : "A", newPresent ? "P" : "A");
     cell.textContent = newPresent ? "P" : "A";
 
-    const student = currentRows.find(r => r.roll === roll);
-    if (student) {
-      const dateSet = lectureType === "TH" ? student.thDates : student.prDates;
-      newPresent ? dateSet.add(date) : dateSet.delete(date);
-    }
+    const student = state.rows.find(r => r.roll === roll);
+    const dateSet = student && (lectureType === "TH" ? student.thDates : student.prDates);
+    if (dateSet) newPresent ? dateSet.add(date) : dateSet.delete(date);
 
     try {
       const res = await fetch(`${API}/attendance`, {
@@ -432,12 +398,10 @@
       renderSummary();
       showToast(`${roll} · ${fmtDate(date)} (${lectureType}) → ${newPresent ? "Present" : "Absent"}`, "ok");
     } catch (err) {
+      // Revert
       cell.classList.replace(newPresent ? "P" : "A", isPresent ? "P" : "A");
       cell.textContent = isPresent ? "P" : "A";
-      if (student) {
-        const dateSet = lectureType === "TH" ? student.thDates : student.prDates;
-        isPresent ? dateSet.add(date) : dateSet.delete(date);
-      }
+      if (dateSet) isPresent ? dateSet.add(date) : dateSet.delete(date);
       showToast(`Failed to update: ${err.message}`, "err");
     } finally {
       delete cell.dataset.saving;
@@ -446,43 +410,41 @@
   }
 
   function updateRowStats(roll) {
-    const student = currentRows.find(r => r.roll === roll);
-    if (!student) return;
+    const { rows, thDates, prDates, hasTH, hasPR } = state;
+    const s = rows.find(r => r.roll === roll);
+    if (!s) return;
 
-    if (currentHasTH) {
-      const thAtt     = currentThDates.filter(d => student.thDates.has(d)).length;
-      const thPct     = currentThDates.length ? Math.round((thAtt / currentThDates.length) * 100) : null;
-      const thPctCell = document.querySelector(`[data-th-pct="${roll}"]`);
-      if (thPctCell) { thPctCell.className = pctCls(thPct); thPctCell.textContent = thPct !== null ? thPct + "%" : "N/A"; }
-    }
+    const update = (dates, set, attr) => {
+      const pct  = dates.length ? Math.round((dates.filter(d => set.has(d)).length / dates.length) * 100) : null;
+      const cell = document.querySelector(`[data-${attr}="${roll}"]`);
+      // Preserve th-divider on pr-pct cells
+      if (cell) {
+        cell.className = pctCls(pct) + (attr === "pr-pct" ? " th-divider" : "");
+        cell.textContent = pct !== null ? pct + "%" : "N/A";
+      }
+      return pct;
+    };
 
-    if (currentHasPR) {
-      const prAtt     = currentPrDates.filter(d => student.prDates.has(d)).length;
-      const prPct     = currentPrDates.length ? Math.round((prAtt / currentPrDates.length) * 100) : null;
-      const prPctCell = document.querySelector(`[data-pr-pct="${roll}"]`);
-      if (prPctCell) { prPctCell.className = pctCls(prPct); prPctCell.textContent = prPct !== null ? prPct + "%" : "N/A"; }
-    }
+    const thPct = hasTH ? update(thDates, s.thDates, "th-pct") : null;
+    const prPct = hasPR ? update(prDates, s.prDates, "pr-pct") : null;
 
-    if (currentHasTH && currentHasPR) {
-      const totLec = currentThDates.length + currentPrDates.length;
-      const totAtt = currentThDates.filter(d => student.thDates.has(d)).length +
-                     currentPrDates.filter(d => student.prDates.has(d)).length;
+    if (hasTH && hasPR) {
+      const totLec = thDates.length + prDates.length;
+      const totAtt = thDates.filter(d => s.thDates.has(d)).length + prDates.filter(d => s.prDates.has(d)).length;
       const ovPct  = totLec ? Math.round((totAtt / totLec) * 100) : null;
-      const ovCell = document.querySelector(`[data-ov-pct="${roll}"]`);
-      if (ovCell) { ovCell.className = pctCls(ovPct); ovCell.textContent = ovPct !== null ? ovPct + "%" : "N/A"; }
+      const cell   = document.querySelector(`[data-ov-pct="${roll}"]`);
+      if (cell) { cell.className = pctCls(ovPct); cell.textContent = ovPct !== null ? ovPct + "%" : "N/A"; }
     }
   }
 
-
-  /* ── Summary ── */
-
+  // ── Summary ──
   function renderSummary() {
-    const { length: total } = currentRows;
-    if (!total) return;
+    const { rows, thDates, prDates, hasTH, hasPR } = state;
+    if (!rows.length) return;
 
-    const items = [["Students", total]];
-    if (currentHasTH) items.push(["TH Lectures", currentThDates.length]);
-    if (currentHasPR) items.push(["PR Lectures", currentPrDates.length]);
+    const items = [["Students", rows.length]];
+    if (hasTH) items.push(["TH Lectures", thDates.length]);
+    if (hasPR) items.push(["PR Lectures", prDates.length]);
 
     $("summary").style.display = "";
     $("summary").innerHTML = items
@@ -490,22 +452,18 @@
       .join("");
   }
 
-
-  /* ── Toast ── */
-
+  // ── Toast ──
   let toastTimer;
   function showToast(msg, type = "ok") {
     const t = $("saveToast");
-    t.textContent   = msg;
-    t.className     = `save-toast save-toast-${type}`;
+    t.textContent = msg;
+    t.className   = `save-toast save-toast-${type}`;
     t.style.display = "block";
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.style.display = "none"; }, 2500);
   }
 
-
-  /* ── Export ── */
-
+  // ── Export ──
   async function exportExcel() {
     const id = role === "subject_teacher" ? activeSubject?._id : $("fSubject").value;
     if (!id) return alert("Select a subject to export.");
@@ -529,7 +487,6 @@
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error(err);
       alert("Export failed. Please try again.");
     }
   }
