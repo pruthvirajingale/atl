@@ -256,10 +256,14 @@
     function todayISO() { return new Date().toISOString().split('T')[0]; }
 
     function buildCheckinURL(subj, lt) {
-      const params = new URLSearchParams({ subjectId: subj._id, lectureType: lt, date: todayISO() });
-      return `${BASE_URL}/checkin?${params.toString()}`;
-    }
-
+  const params = new URLSearchParams({
+    subjectId: subj._id,
+    lectureType: lt,
+    date: todayISO(),
+    ts: Date.now()
+  });
+  return `${BASE_URL}/checkin?${params.toString()}`;
+}
     function generateQR() {
       if (!selectedSubj) return;
       clearInterval(refreshTimer);
@@ -290,16 +294,21 @@
       document.getElementById('qrHint').textContent = url;
     }
 
-    function startCountdown() {
-      countDown = REFRESH_SEC; tickTimer();
-      refreshTimer = setInterval(() => {
-        countDown--; tickTimer();
-        if (countDown <= 0) {
-          const url = buildCheckinURL(selectedSubj, lectureType);
-          renderQR(url); updateLabels(url); countDown = REFRESH_SEC;
-        }
-      }, 1000);
+   function startCountdown() {
+  countDown = REFRESH_SEC;
+  const url = buildCheckinURL(selectedSubj, lectureType);
+  renderQR(url); updateLabels(url);         // render immediately with ts
+  tickTimer();
+
+  refreshTimer = setInterval(() => {
+    countDown--; tickTimer();
+    if (countDown <= 0) {
+      const newUrl = buildCheckinURL(selectedSubj, lectureType);  // fresh ts
+      renderQR(newUrl); updateLabels(newUrl);
+      countDown = REFRESH_SEC;
     }
+  }, 1000);
+}
 
     function tickTimer() {
       document.getElementById('timerLabel').textContent = `${countDown}s`;
