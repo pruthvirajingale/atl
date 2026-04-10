@@ -1,298 +1,487 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HOD Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="dashboard.css" />
 </head>
+
 <body>
+  <nav>
+    <div class="nav-left">
+      <div class="nav-dot"></div>
+      <span class="nav-title">HOD</span>
+    </div>
+    <span class="nav-dept" id="navDept">—</span>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </nav>
 
-<nav>
-  <div class="nav-left">
-    <div class="nav-dot"></div>
-    <span class="nav-title">HOD</span>
-  </div>
-  <span class="nav-dept" id="navDept">—</span>
-  <button class="btn-logout" onclick="logout()">Sign out</button>
-</nav>
+  <div class="page">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('subjects')">
+        Subjects
+      </button>
+      <button class="tab" onclick="switchTab('teachers')">Teachers</button>
+      <button class="tab" onclick="switchTab('students')">Students</button>
+    </div>
 
-<div class="page">
-
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('subjects')">Subjects</button>
-    <button class="tab"        onclick="switchTab('teachers')">Teachers</button>
-    <button class="tab"        onclick="switchTab('students')">Students</button>
-  </div>
-
-  <!-- SUBJECTS -->
-  <div id="tab-subjects">
-    <div class="sec-head">
-      <span class="sec-title">Subjects</span>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <div class="filters">
-          <select id="fYear" onchange="onYearFilter()"><option value="">All Years</option></select>
-          <select id="fSem"  onchange="loadSubjects()"><option value="">All Sems</option><option value="1">Sem 1</option><option value="2">Sem 2</option></select>
-          <select id="fDiv"  onchange="loadSubjects()"><option value="">All Divs</option></select>
+    <!-- SUBJECTS -->
+    <div id="tab-subjects">
+      <div class="sec-head">
+        <span class="sec-title">Subjects</span>
+        <div style="
+              display: flex;
+              gap: 8px;
+              align-items: center;
+              flex-wrap: wrap;
+            ">
+          <div class="filters">
+            <select id="fYear" onchange="onYearFilter()">
+              <option value="">All Years</option>
+            </select>
+            <select id="fSem" onchange="loadSubjects()">
+              <option value="">All Sems</option>
+              <option value="1">Sem 1</option>
+              <option value="2">Sem 2</option>
+            </select>
+            <select id="fDiv" onchange="loadSubjects()">
+              <option value="">All Divs</option>
+            </select>
+          </div>
+          <button class="btn-add" onclick="openSubjectModal()">
+            + Add Subject
+          </button>
         </div>
-        <button class="btn-add" onclick="openSubjectModal()">+ Add Subject</button>
+      </div>
+      <div class="card" style="padding: 0; overflow: hidden">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Year / Sem</th>
+              <th>Division</th>
+              <th>Type</th>
+              <th>Teacher</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="subjectBody">
+            <tr>
+              <td colspan="6">
+                <div class="empty">Loading…</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table class="tbl">
-        <thead><tr><th>Subject</th><th>Year / Sem</th><th>Division</th><th>Type</th><th>Teacher</th><th></th></tr></thead>
-        <tbody id="subjectBody"><tr><td colspan="6"><div class="empty">Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- TEACHERS -->
-  <div id="tab-teachers" style="display:none;">
-    <div class="sec-head">
-      <span class="sec-title">Teachers</span>
-      <button class="btn-add" onclick="openTeacherModal()">+ Add Teacher</button>
+    <!-- TEACHERS -->
+    <div id="tab-teachers" style="display: none">
+      <div class="sec-head">
+        <span class="sec-title">Teachers</span>
+        <button class="btn-add" onclick="openTeacherModal()">
+          + Add Teacher
+        </button>
+      </div>
+      <div class="card" style="padding: 0; overflow: hidden">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Assigned Subjects</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="teacherBody">
+            <tr>
+              <td colspan="5">
+                <div class="empty">Loading…</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table class="tbl">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Assigned Subjects</th><th></th></tr></thead>
-        <tbody id="teacherBody"><tr><td colspan="5"><div class="empty">Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- STUDENTS -->
-  <div id="tab-students" style="display:none;">
-    <div class="sec-head">
-      <span class="sec-title">Students</span>
-    </div>
+    <!-- STUDENTS -->
+    <div id="tab-students" style="display: none">
+      <div class="sec-head">
+        <span class="sec-title">Students</span>
+      </div>
 
-    <!-- Upload card -->
-    <div class="card" style="margin-bottom:20px;">
-      <p style="margin:0 0 14px;font-size:13px;color:var(--ink-muted);line-height:1.6;">
-        Upload an Excel or CSV file with two columns — <strong>roll</strong> and <strong>name</strong> — to pre-populate the student roster for a division.
-        The first row must be the header. Students already in the database will have their names updated.
-      </p>
+      <!-- Upload card -->
+      <div class="card" style="margin-bottom: 20px">
+        <p style="
+              margin: 0 0 14px;
+              font-size: 13px;
+              color: var(--ink-muted);
+              line-height: 1.6;
+            ">
+          Upload an Excel or CSV file with two columns —
+          <strong>roll</strong> and <strong>name</strong> — to pre-populate
+          the student roster for a division. The first row must be the header.
+          Students already in the database will have their names updated.
+        </p>
 
-      <div class="form-grid three" style="margin-bottom:14px;">
-        <div class="field">
-          <label>Year</label>
-          <select id="stuYear" onchange="onStuYearChange()">
+        <div class="form-grid three" style="margin-bottom: 14px">
+          <div class="field">
+            <label>Year</label>
+            <select id="stuYear" onchange="onStuYearChange()">
+              <option value="">— Year —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Division</label>
+            <select id="stuDiv">
+              <option value="">— Division —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Excel / CSV file</label>
+            <input type="file" id="stuFile" accept=".xlsx,.xls,.csv" style="
+                  padding: 6px 8px;
+                  font-size: 13px;
+                  border: 1px solid var(--border);
+                  border-radius: 6px;
+                  width: 100%;
+                  box-sizing: border-box;
+                " />
+          </div>
+        </div>
+
+        <div style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              flex-wrap: wrap;
+            ">
+          <button class="btn btn-primary" onclick="uploadStudents()">
+            Upload Students
+          </button>
+          <a id="templateLink" href="#" onclick="downloadTemplate(event)" style="
+                font-size: 13px;
+                color: var(--ink-muted);
+                text-decoration: underline;
+              ">
+            Download sample template
+          </a>
+        </div>
+
+        <div id="uploadResult" style="margin-top: 14px"></div>
+      </div>
+
+      <!-- Roster preview -->
+      <div class="sec-head" style="margin-bottom: 8px">
+        <span class="sec-title" style="font-size: 14px">Roster Preview</span>
+        <div class="filters">
+          <select id="rYear" onchange="onRosterYearChange()">
             <option value="">— Year —</option>
           </select>
-        </div>
-        <div class="field">
-          <label>Division</label>
-          <select id="stuDiv">
+          <select id="rDiv" onchange="loadRoster()">
             <option value="">— Division —</option>
           </select>
         </div>
-        <div class="field">
-          <label>Excel / CSV file</label>
-          <input type="file" id="stuFile" accept=".xlsx,.xls,.csv"
-                 style="padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%;box-sizing:border-box;" />
-        </div>
       </div>
-
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="uploadStudents()">Upload Students</button>
-        <a id="templateLink" href="#" onclick="downloadTemplate(event)"
-           style="font-size:13px;color:var(--ink-muted);text-decoration:underline;">
-          Download sample template
-        </a>
+      <div class="card" style="padding: 0; overflow: hidden">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width: 80px">Roll</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody">
+            <tr>
+              <td colspan="2">
+                <div class="empty">
+                  Select a year and division to preview.
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-
-      <div id="uploadResult" style="margin-top:14px;"></div>
-    </div>
-
-    <!-- Roster preview -->
-    <div class="sec-head" style="margin-bottom:8px;">
-      <span class="sec-title" style="font-size:14px;">Roster Preview</span>
-      <div class="filters">
-        <select id="rYear" onchange="onRosterYearChange()"><option value="">— Year —</option></select>
-        <select id="rDiv"  onchange="loadRoster()"><option value="">— Division —</option></select>
-      </div>
-    </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table class="tbl">
-        <thead><tr><th style="width:80px;">Roll</th><th>Name</th></tr></thead>
-        <tbody id="rosterBody"><tr><td colspan="2"><div class="empty">Select a year and division to preview.</div></td></tr></tbody>
-      </table>
     </div>
   </div>
 
-</div>
-
-<!-- SUBJECT MODAL -->
-<div class="overlay" id="subjectModal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title" id="subjectModalTitle">Add Subject</span>
-      <button class="modal-close" onclick="closeModal('subjectModal')">✕</button>
+  <!-- SUBJECT MODAL -->
+  <div class="overlay" id="subjectModal">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title" id="subjectModalTitle">Add Subject</span>
+        <button class="modal-close" onclick="closeModal('subjectModal')">
+          ✕
+        </button>
+      </div>
+      <input type="hidden" id="editSubjectId" />
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div class="form-grid">
+          <div class="field">
+            <label>Subject Name</label><input type="text" id="subName" placeholder="e.g. Network Security" />
+          </div>
+          <div class="field">
+            <label>Code</label><input type="text" id="subCode" placeholder="e.g. NIS" />
+          </div>
+        </div>
+        <div class="form-grid three">
+          <div class="field">
+            <label>Year</label>
+            <select id="subYear">
+              <option value="">— Year —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Semester</label>
+            <select id="subSem">
+              <option value="">— Sem —</option>
+              <option value="1">Sem 1</option>
+              <option value="2">Sem 2</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Division</label>
+            <select id="subDiv">
+              <option value="">— Division —</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <div class="type-toggle">
+            <button class="type-btn active" data-type="TH" onclick="setType('TH')">
+              Theory
+            </button>
+            <button class="type-btn" data-type="PR" onclick="setType('PR')">
+              Practical
+            </button>
+            <button class="type-btn" data-type="TH+PR" onclick="setType('TH+PR')">
+              Both
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Assign Teacher
+            <span style="color: var(--ink-faint)">(optional)</span></label>
+          <select id="subTeacher">
+            <option value="">— Assign later —</option>
+          </select>
+        </div>
+      </div>
+      <div id="subjectMsg"></div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 16px" onclick="saveSubject()">
+        Save Subject
+      </button>
     </div>
-    <input type="hidden" id="editSubjectId" />
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="form-grid">
-        <div class="field"><label>Subject Name</label><input type="text" id="subName" placeholder="e.g. Network Security" /></div>
-        <div class="field"><label>Code</label><input type="text" id="subCode" placeholder="e.g. NIS" /></div>
-      </div>
-      <div class="form-grid three">
-        <div class="field">
-          <label>Year</label>
-          <select id="subYear"><option value="">— Year —</option></select>
-        </div>
-        <div class="field">
-          <label>Semester</label>
-          <select id="subSem"><option value="">— Sem —</option><option value="1">Sem 1</option><option value="2">Sem 2</option></select>
-        </div>
-        <div class="field">
-          <label>Division</label>
-          <select id="subDiv"><option value="">— Division —</option></select>
-        </div>
-      </div>
-      <div class="field">
-        <label>Type</label>
-        <div class="type-toggle">
-          <button class="type-btn active" data-type="TH"    onclick="setType('TH')">Theory</button>
-          <button class="type-btn"        data-type="PR"    onclick="setType('PR')">Practical</button>
-          <button class="type-btn"        data-type="TH+PR" onclick="setType('TH+PR')">Both</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Assign Teacher <span style="color:var(--ink-faint)">(optional)</span></label>
-        <select id="subTeacher"><option value="">— Assign later —</option></select>
-      </div>
-    </div>
-    <div id="subjectMsg"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="saveSubject()">Save Subject</button>
   </div>
-</div>
 
-<!-- TEACHER MODAL -->
-<div class="overlay" id="teacherModal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">Add Teacher</span>
-      <button class="modal-close" onclick="closeModal('teacherModal')">✕</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="field"><label>Full Name</label><input type="text" id="tchName" placeholder="e.g. Prof. Anjali Desai" /></div>
-      <div class="field"><label>Email</label><input type="email" id="tchEmail" placeholder="teacher@college.edu" /></div>
-      <div class="field">
-        <label>Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="tchPass" placeholder="Set a password to share" />
-          <button class="pw-toggle" onclick="togglePw('tchPass',this)">Show</button>
+  <!-- TEACHER MODAL -->
+  <div class="overlay" id="teacherModal">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">Add Teacher</span>
+        <button class="modal-close" onclick="closeModal('teacherModal')">
+          ✕
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div class="field">
+          <label>Full Name</label><input type="text" id="tchName" placeholder="e.g. Prof. Anjali Desai" />
+        </div>
+        <div class="field">
+          <label>Email</label><input type="email" id="tchEmail" placeholder="teacher@college.edu" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="tchPass" placeholder="Set a password to share" />
+            <button class="pw-toggle" onclick="togglePw('tchPass', this)">
+              Show
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <select id="tchRole">
+            <option value="subject_teacher">Subject Teacher</option>
+            <option value="class_teacher">Class Teacher</option>
+          </select>
         </div>
       </div>
+      <div id="teacherMsg"></div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 16px" onclick="saveTeacher()">
+        Create Teacher Account
+      </button>
+    </div>
+  </div>
+
+  <!-- ASSIGN MODAL -->
+  <div class="overlay" id="assignModal">
+    <div class="modal" style="max-width: 360px">
+      <div class="modal-head">
+        <span class="modal-title">Assign Teacher</span>
+        <button class="modal-close" onclick="closeModal('assignModal')">
+          ✕
+        </button>
+      </div>
+      <input type="hidden" id="assignSubjectId" />
       <div class="field">
-        <label>Role</label>
-        <select id="tchRole">
-          <option value="subject_teacher">Subject Teacher</option>
-          <option value="class_teacher">Class Teacher</option>
+        <label>Teacher</label>
+        <select id="assignTeacher">
+          <option value="">— Select teacher —</option>
         </select>
       </div>
+      <div id="assignMsg"></div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 16px" onclick="saveAssign()">
+        Assign
+      </button>
     </div>
-    <div id="teacherMsg"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="saveTeacher()">Create Teacher Account</button>
   </div>
-</div>
 
-<!-- ASSIGN MODAL -->
-<div class="overlay" id="assignModal">
-  <div class="modal" style="max-width:360px;">
-    <div class="modal-head">
-      <span class="modal-title">Assign Teacher</span>
-      <button class="modal-close" onclick="closeModal('assignModal')">✕</button>
-    </div>
-    <input type="hidden" id="assignSubjectId" />
-    <div class="field">
-      <label>Teacher</label>
-      <select id="assignTeacher"><option value="">— Select teacher —</option></select>
-    </div>
-    <div id="assignMsg"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="saveAssign()">Assign</button>
-  </div>
-</div>
+  <script>
+    const API = "https://attendance-version-1.vercel.app";
+    const token = localStorage.getItem("token");
+    const deptId = localStorage.getItem("departmentId");
+    if (!token || localStorage.getItem("role") !== "hod")
+      window.location.href = "login.html";
+    const hdrs = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
 
-<script>
-  const API = "https://attendance-version-1.vercel.app";
-  const token  = localStorage.getItem("token");
-  const deptId = localStorage.getItem("departmentId");
-  if (!token || localStorage.getItem("role") !== "hod") window.location.href = "login.html";
-  const hdrs = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    let dept = null,
+      teachers = [],
+      subjects = [],
+      selectedType = "TH";
 
-  let dept = null, teachers = [], subjects = [], selectedType = "TH";
+    function $(id) {
+      return document.getElementById(id);
+    }
+    function showMsg(elId, text, type) {
+      $(elId).innerHTML = `<div class="msg ${type}">${text}</div>`;
+    }
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
 
-  function $(id) { return document.getElementById(id); }
-  function showMsg(elId, text, type) { $(elId).innerHTML = `<div class="msg ${type}">${text}</div>`; }
-  function logout() { localStorage.clear(); window.location.href = "login.html"; }
-
-  function switchTab(name) {
-    ["subjects","teachers","students"].forEach(t => $(`tab-${t}`).style.display = t === name ? "" : "none");
-    document.querySelectorAll(".tab").forEach((btn, i) =>
-      btn.classList.toggle("active", ["subjects","teachers","students"][i] === name)
+    function switchTab(name) {
+      ["subjects", "teachers", "students"].forEach(
+        (t) => ($(`tab-${t}`).style.display = t === name ? "" : "none"),
+      );
+      document
+        .querySelectorAll(".tab")
+        .forEach((btn, i) =>
+          btn.classList.toggle(
+            "active",
+            ["subjects", "teachers", "students"][i] === name,
+          ),
+        );
+      if (name === "teachers") loadTeachers();
+      if (name === "students") initStudentTab();
+    }
+    function openModal(id) {
+      $(id).classList.add("open");
+    }
+    function closeModal(id) {
+      $(id).classList.remove("open");
+    }
+    function togglePw(id, btn) {
+      const inp = $(id);
+      inp.type = inp.type === "password" ? "text" : "password";
+      btn.textContent = inp.type === "password" ? "Show" : "Hide";
+    }
+    document.querySelectorAll(".overlay").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        if (e.target === el) el.classList.remove("open");
+      }),
     );
-    if (name === "teachers") loadTeachers();
-    if (name === "students") initStudentTab();
-  }
-  function openModal(id)  { $(id).classList.add("open"); }
-  function closeModal(id) { $(id).classList.remove("open"); }
-  function togglePw(id, btn) {
-    const inp = $(id); inp.type = inp.type === "password" ? "text" : "password";
-    btn.textContent = inp.type === "password" ? "Show" : "Hide";
-  }
-  document.querySelectorAll(".overlay").forEach(el =>
-    el.addEventListener("click", e => { if (e.target === el) el.classList.remove("open"); })
-  );
 
-  /* ── Department ── */
-  async function loadDept() {
-    const res = await fetch(`${API}/departments/${deptId}`, { headers: hdrs });
-    dept = await res.json();
-    $("navDept").textContent = `${dept.name} (${dept.code})`;
-    const years = (dept.years || []).map(y => y.year).sort();
-    $("fYear").innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${y}">Year ${y}</option>`).join("");
-    $("subYear").innerHTML = `<option value="">— Year —</option>` + years.map(y => `<option value="${y}">Year ${y}</option>`).join("");
-    updateDivFilter();
-  }
+    /* ── Department ── */
+    async function loadDept() {
+      const res = await fetch(`${API}/departments/${deptId}`, {
+        headers: hdrs,
+      });
+      dept = await res.json();
+      $("navDept").textContent = `${dept.name} (${dept.code})`;
+      const years = (dept.years || []).map((y) => y.year).sort();
+      $("fYear").innerHTML =
+        `<option value="">All Years</option>` +
+        years.map((y) => `<option value="${y}">Year ${y}</option>`).join("");
+      $("subYear").innerHTML =
+        `<option value="">— Year —</option>` +
+        years.map((y) => `<option value="${y}">Year ${y}</option>`).join("");
+      updateDivFilter();
+    }
 
-  function updateDivFilter() {
-    const year = +$("fYear").value;
-    const yr   = (dept?.years || []).find(y => y.year === year);
-    const divs = yr?.divisions || (dept?.years || []).flatMap(y => y.divisions || []);
-    $("fDiv").innerHTML = `<option value="">All Divs</option>` +
-      divs.map(d => `<option value="${d._id}">Div ${d.name}</option>`).join("");
-  }
+    function updateDivFilter() {
+      const year = +$("fYear").value;
+      const yr = (dept?.years || []).find((y) => y.year === year);
+      const divs =
+        yr?.divisions ||
+        (dept?.years || []).flatMap((y) => y.divisions || []);
+      $("fDiv").innerHTML =
+        `<option value="">All Divs</option>` +
+        divs
+          .map((d) => `<option value="${d._id}">Div ${d.name}</option>`)
+          .join("");
+    }
 
-  function onYearFilter() { updateDivFilter(); loadSubjects(); }
+    function onYearFilter() {
+      updateDivFilter();
+      loadSubjects();
+    }
 
-  $("subYear").addEventListener("change", () => {
-    const year = +$("subYear").value;
-    const yr   = (dept?.years || []).find(y => y.year === year);
-    $("subDiv").innerHTML = `<option value="">— Division —</option>` +
-      (yr?.divisions || []).map(d => `<option value="${d._id}">${d.name} (${d.rollRange.start}–${d.rollRange.end})</option>`).join("");
-  });
+    $("subYear").addEventListener("change", () => {
+      const year = +$("subYear").value;
+      const yr = (dept?.years || []).find((y) => y.year === year);
+      $("subDiv").innerHTML =
+        `<option value="">— Division —</option>` +
+        (yr?.divisions || [])
+          .map(
+            (d) =>
+              `<option value="${d._id}">${d.name} (${d.rollRange.start}–${d.rollRange.end})</option>`,
+          )
+          .join("");
+    });
 
-  /* ── Subjects ── */
-  async function loadSubjects() {
-    const params = new URLSearchParams();
-    const year = $("fYear").value, sem = $("fSem").value, div = $("fDiv").value;
-    if (year) params.set("year", year);
-    if (sem)  params.set("semester", sem);
-    if (div)  params.set("divisionId", div);
-    const res = await fetch(`${API}/subjects?${params}`, { headers: hdrs });
-    subjects = await res.json(); renderSubjects();
-  }
-  function renderSubjects() {
-    const tbody = $("subjectBody");
-    if (!subjects.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty">No subjects found.</div></td></tr>`; return; }
-    tbody.innerHTML = subjects.map(s => {
-      const teacher = s.teacherId
-        ? `<span class="pill pill-green">${s.teacherId.name}</span>`
-        : `<button class="btn-sm btn-ghost" onclick="openAssign('${s._id}')">Assign</button>`;
-      const typePill = s.type === "TH" ? "pill-blue" : s.type === "PR" ? "pill-purple" : "pill-yellow";
-      return `<tr>
+    /* ── Subjects ── */
+    async function loadSubjects() {
+      const params = new URLSearchParams();
+      const year = $("fYear").value,
+        sem = $("fSem").value,
+        div = $("fDiv").value;
+      if (year) params.set("year", year);
+      if (sem) params.set("semester", sem);
+      if (div) params.set("divisionId", div);
+      const res = await fetch(`${API}/subjects?${params}`, { headers: hdrs });
+      subjects = await res.json();
+      renderSubjects();
+    }
+    function renderSubjects() {
+      const tbody = $("subjectBody");
+      if (!subjects.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty">No subjects found.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = subjects
+        .map((s) => {
+          const teacher = s.teacherId
+            ? `<span class="pill pill-green">${s.teacherId.name}</span>`
+            : `<button class="btn-sm btn-ghost" onclick="openAssign('${s._id}')">Assign</button>`;
+          const typePill =
+            s.type === "TH"
+              ? "pill-blue"
+              : s.type === "PR"
+                ? "pill-purple"
+                : "pill-yellow";
+          return `<tr>
         <td><strong>${s.name}</strong><br><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${s.code}</span></td>
         <td><span class="pill pill-blue">Y${s.year} S${s.semester}</span></td>
         <td>Div ${s.divisionName}</td>
@@ -303,199 +492,323 @@
           <button class="btn-sm btn-danger" onclick="deleteSubject('${s._id}')">Delete</button>
         </div></td>
       </tr>`;
-    }).join("");
-  }
+        })
+        .join("");
+    }
+//same code to render the subjects in the table and also to render the teachers in the teacher table.
+    function setType(type) {
+      selectedType = type;
+      document
+        .querySelectorAll(".type-btn")
+        .forEach((btn) =>
+          btn.classList.toggle("active", btn.dataset.type === type),
+        );
+    }
+    function openSubjectModal() {
+      $("editSubjectId").value = "";
+      $("subjectModalTitle").textContent = "Add Subject";
+      ["subName", "subCode"].forEach((id) => ($(id).value = ""));
+      $("subYear").value = "";
+      $("subSem").value = "";
+      $("subDiv").innerHTML = `<option value="">— Division —</option>`;
+      setType("TH");
+      populateTeacherSelect("subTeacher");
+      $("subjectMsg").innerHTML = "";
+      openModal("subjectModal");
+    } // same admin dashboard sarkhe clean slate.
 
-  function setType(type) {
-    selectedType = type;
-    document.querySelectorAll(".type-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.type === type));
-  }
-  function openSubjectModal() {
-    $("editSubjectId").value = ""; $("subjectModalTitle").textContent = "Add Subject";
-    ["subName","subCode"].forEach(id => $(id).value = "");
-    $("subYear").value = ""; $("subSem").value = "";
-    $("subDiv").innerHTML = `<option value="">— Division —</option>`;
-    setType("TH"); populateTeacherSelect("subTeacher"); $("subjectMsg").innerHTML = "";
-    openModal("subjectModal");
-  }
-  function openEditSubject(id) {
-    const s = subjects.find(x => x._id === id); if (!s) return;
-    $("editSubjectId").value = id; $("subjectModalTitle").textContent = "Edit Subject";
-    $("subName").value = s.name; $("subCode").value = s.code;
-    $("subYear").value = s.year; $("subSem").value = s.semester;
-    const yr = (dept?.years || []).find(y => y.year === s.year);
-    $("subDiv").innerHTML = `<option value="">— Division —</option>` +
-      (yr?.divisions || []).map(d => `<option value="${d._id}"${d._id === s.divisionId ? " selected" : ""}>${d.name} (${d.rollRange.start}–${d.rollRange.end})</option>`).join("");
-    setType(s.type); populateTeacherSelect("subTeacher", s.teacherId?._id || s.teacherId);
-    $("subjectMsg").innerHTML = ""; openModal("subjectModal");
-  }
-  async function saveSubject() {
-    const id = $("editSubjectId").value, name = $("subName").value.trim(), code = $("subCode").value.trim().toUpperCase();
-    const year = +$("subYear").value, semester = +$("subSem").value, divisionId = $("subDiv").value;
-    const teacherId = $("subTeacher").value || null;
-    const yr  = (dept?.years || []).find(y => y.year === year);
-    const div = (yr?.divisions || []).find(d => d._id === divisionId);
-    if (!name || !code || !year || !semester || !divisionId)
-      return showMsg("subjectMsg", "All fields except teacher are required.", "err");
-    const body = { name, code, year, semester, type: selectedType, divisionId, divisionName: div?.name || "", teacherId };
-    const res  = await fetch(id ? `${API}/subjects/${id}` : `${API}/subjects`, {
-      method: id ? "PATCH" : "POST", headers: hdrs, body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if (!res.ok) return showMsg("subjectMsg", data.error, "err");
-    showMsg("subjectMsg", id ? "Subject updated." : "Subject created.", "ok");
-    setTimeout(() => { closeModal("subjectModal"); loadSubjects(); }, 900);
-  }
-  async function deleteSubject(id) {
-    if (!confirm("Delete this subject?")) return;
-    await fetch(`${API}/subjects/${id}`, { method: "DELETE", headers: hdrs }); loadSubjects();
-  }
-  function openAssign(subjectId) {
-    $("assignSubjectId").value = subjectId; $("assignMsg").innerHTML = "";
-    populateTeacherSelect("assignTeacher"); openModal("assignModal");
-  }
-  async function saveAssign() {
-    const subjectId = $("assignSubjectId").value, teacherId = $("assignTeacher").value;
-    if (!teacherId) return showMsg("assignMsg", "Select a teacher.", "err");
-    const res  = await fetch(`${API}/subjects/${subjectId}`, { method: "PATCH", headers: hdrs, body: JSON.stringify({ teacherId }) });
-    const data = await res.json();
-    if (!res.ok) return showMsg("assignMsg", data.error, "err");
-    showMsg("assignMsg", "Teacher assigned.", "ok");
-    setTimeout(() => { closeModal("assignModal"); loadSubjects(); }, 900);
-  }
-
-  /* ── Teachers ── */
-  async function loadTeachers() {
-    const [r1, r2] = await Promise.all([
-      fetch(`${API}/users?role=subject_teacher&departmentId=${deptId}`, { headers: hdrs }),
-      fetch(`${API}/users?role=class_teacher&departmentId=${deptId}`,   { headers: hdrs })
-    ]);
-    teachers = [...await r1.json(), ...await r2.json()];
-    renderTeachers();
-  }
-  function renderTeachers() {
-    const tbody = $("teacherBody");
-    if (!teachers.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No teachers yet.</div></td></tr>`; return; }
-    tbody.innerHTML = teachers.map(t => {
-      const rolePill  = t.role === "class_teacher" ? "pill-yellow" : "pill-blue";
-      const roleLabel = t.role === "class_teacher" ? "Class Teacher" : "Subject Teacher";
-      const assigned  = (t.assignedSubjects || []).length
-        ? (t.assignedSubjects || []).map(a => {
-            const s = subjects.find(x => x._id === (a.subjectId?._id || a.subjectId));
-            return s ? `<span class="pill pill-blue" style="margin:1px;">${s.code} Div${s.divisionName}</span>` : "";
-          }).join("")
-        : `<span style="color:var(--ink-faint);font-size:12px;">None</span>`;
-      return `<tr>
+    function openEditSubject(id) {
+      const s = subjects.find((x) => x._id === id);
+      if (!s) return;
+      $("editSubjectId").value = id;
+      $("subjectModalTitle").textContent = "Edit Subject";
+      $("subName").value = s.name;
+      $("subCode").value = s.code;
+      $("subYear").value = s.year;
+      $("subSem").value = s.semester;
+      const yr = (dept?.years || []).find((y) => y.year === s.year);
+      $("subDiv").innerHTML =
+        `<option value="">— Division —</option>` +
+        (yr?.divisions || [])
+          .map(
+            (d) =>
+              `<option value="${d._id}"${d._id === s.divisionId ? " selected" : ""}>${d.name} (${d.rollRange.start}–${d.rollRange.end})</option>`,
+          )
+          .join("");
+      setType(s.type);
+      populateTeacherSelect("subTeacher", s.teacherId?._id || s.teacherId);
+      $("subjectMsg").innerHTML = "";
+      openModal("subjectModal");
+    }
+    async function saveSubject() {
+      const id = $("editSubjectId").value,
+        name = $("subName").value.trim(),
+        code = $("subCode").value.trim().toUpperCase();
+      const year = +$("subYear").value,
+        semester = +$("subSem").value,
+        divisionId = $("subDiv").value;
+      const teacherId = $("subTeacher").value || null;
+      const yr = (dept?.years || []).find((y) => y.year === year);
+      const div = (yr?.divisions || []).find((d) => d._id === divisionId);
+      if (!name || !code || !year || !semester || !divisionId)
+        return showMsg(
+          "subjectMsg",
+          "All fields except teacher are required.",
+          "err",
+        );
+      const body = {
+        name,
+        code,
+        year,
+        semester,
+        type: selectedType,
+        divisionId,
+        divisionName: div?.name || "",
+        teacherId,
+      };
+      const res = await fetch(
+        id ? `${API}/subjects/${id}` : `${API}/subjects`,
+        {
+          method: id ? "PATCH" : "POST",
+          headers: hdrs,
+          body: JSON.stringify(body),
+        },
+      ); // same as before, if id exists we are updating the subject otherwise creating a new one.
+      const data = await res.json();
+      if (!res.ok) return showMsg("subjectMsg", data.error, "err");
+      showMsg(
+        "subjectMsg",
+        id ? "Subject updated." : "Subject created.",
+        "ok",
+      );
+      setTimeout(() => {
+        closeModal("subjectModal");
+        loadSubjects();
+      }, 900);
+    }
+    async function deleteSubject(id) {
+      if (!confirm("Delete this subject?")) return;
+      await fetch(`${API}/subjects/${id}`, {
+        method: "DELETE",
+        headers: hdrs,
+      });
+      loadSubjects();
+    }
+    function openAssign(subjectId) {
+      $("assignSubjectId").value = subjectId;
+      $("assignMsg").innerHTML = "";
+      populateTeacherSelect("assignTeacher");
+      openModal("assignModal");
+    }
+    async function saveAssign() {
+      const subjectId = $("assignSubjectId").value,
+        teacherId = $("assignTeacher").value;
+      if (!teacherId) return showMsg("assignMsg", "Select a teacher.", "err");
+      const res = await fetch(`${API}/subjects/${subjectId}`, {
+        method: "PATCH",
+        headers: hdrs,
+        body: JSON.stringify({ teacherId }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showMsg("assignMsg", data.error, "err");
+      showMsg("assignMsg", "Teacher assigned.", "ok");
+      setTimeout(() => {
+        closeModal("assignModal");
+        loadSubjects();
+      }, 900);
+    }
+//assign kele la data save karaysathi 1 ?  2 PATCH request pathavto jya madhe subjectId and teacherId as body madhe pathavto. Jya mule backend la kalel ki kontya subject la kontya teacher la assign karaycha ahe. Backend madhe tya subject cha teacherId update kela jato. Yaa process mule subject la teacher assign hoto.
+    /* ── Teachers ── */
+    async function loadTeachers() {
+      const [r1, r2] = await Promise.all([
+        fetch(`${API}/users?role=subject_teacher&departmentId=${deptId}`, {
+          headers: hdrs,
+        }),
+        fetch(`${API}/users?role=class_teacher&departmentId=${deptId}`, {
+          headers: hdrs,
+        }),
+      ]);
+      teachers = [...(await r1.json()), ...(await r2.json())];
+      renderTeachers();
+    }
+    function renderTeachers() {
+      const tbody = $("teacherBody");
+      if (!teachers.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No teachers yet.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = teachers
+        .map((t) => {
+          const rolePill =
+            t.role === "class_teacher" ? "pill-yellow" : "pill-blue";
+          const roleLabel =
+            t.role === "class_teacher" ? "Class Teacher" : "Subject Teacher";
+          const assigned = (t.assignedSubjects || []).length
+            ? (t.assignedSubjects || [])
+              .map((a) => {
+                const s = subjects.find(
+                  (x) => x._id === (a.subjectId?._id || a.subjectId),
+                );
+                return s
+                  ? `<span class="pill pill-blue" style="margin:1px;">${s.code} Div${s.divisionName}</span>`
+                  : "";
+              })
+              .join("")
+            : `<span style="color:var(--ink-faint);font-size:12px;">None</span>`;
+          return `<tr>
         <td><strong>${t.name}</strong></td>
         <td class="small-text">${t.email}</td>
         <td><span class="pill ${rolePill}">${roleLabel}</span></td>
         <td>${assigned}</td>
         <td><button class="btn-sm btn-danger" onclick="deleteTeacher('${t._id}')">Delete</button></td>
       </tr>`;
-    }).join("");
-  }
-  function populateTeacherSelect(selId, selectedId = "") {
-    $(selId).innerHTML = `<option value="">— Assign later —</option>` +
-      teachers.filter(t => t.role === "subject_teacher")
-        .map(t => `<option value="${t._id}"${t._id === selectedId ? " selected" : ""}>${t.name}</option>`).join("");
-  }
-  function openTeacherModal() {
-    ["tchName","tchEmail","tchPass"].forEach(id => $(id).value = "");
-    $("tchRole").value = "subject_teacher"; $("teacherMsg").innerHTML = ""; openModal("teacherModal");
-  }
-  async function saveTeacher() {
-    const name = $("tchName").value.trim(), email = $("tchEmail").value.trim();
-    const password = $("tchPass").value, role = $("tchRole").value;
-    if (!name || !email || !password) return showMsg("teacherMsg", "All fields are required.", "err");
-    if (password.length < 6) return showMsg("teacherMsg", "Password must be at least 6 characters.", "err");
-    const res  = await fetch(`${API}/users`, { method: "POST", headers: hdrs, body: JSON.stringify({ name, email, password, role, departmentId: deptId }) });
-    const data = await res.json();
-    if (!res.ok) return showMsg("teacherMsg", data.error, "err");
-    showMsg("teacherMsg", `Account created for ${name}.`, "ok");
-    setTimeout(() => { closeModal("teacherModal"); loadTeachers(); }, 900);
-  }
-  async function deleteTeacher(id) {
-    if (!confirm("Delete this teacher account?")) return;
-    await fetch(`${API}/users/${id}`, { method: "DELETE", headers: hdrs }); loadTeachers();
-  }
-
-  /* ── Students ── */
-
-  // Populate year + division selects in the Students tab (reuses dept data)
-  function initStudentTab() {
-    if (!dept) return;
-    const years = (dept.years || []).map(y => y.year).sort();
-
-    // Upload selects
-    $("stuYear").innerHTML = `<option value="">— Year —</option>` +
-      years.map(y => `<option value="${y}">Year ${y}</option>`).join("");
-    $("stuDiv").innerHTML = `<option value="">— Division —</option>`;
-
-    // Roster preview selects
-    $("rYear").innerHTML = `<option value="">— Year —</option>` +
-      years.map(y => `<option value="${y}">Year ${y}</option>`).join("");
-    $("rDiv").innerHTML = `<option value="">— Division —</option>`;
-
-    $("uploadResult").innerHTML = "";
-    $("rosterBody").innerHTML = `<tr><td colspan="2"><div class="empty">Select a year and division to preview.</div></td></tr>`;
-  }
-
-  function onStuYearChange() {
-    const year = +$("stuYear").value;
-    const yr   = (dept?.years || []).find(y => y.year === year);
-    $("stuDiv").innerHTML = `<option value="">— Division —</option>` +
-      (yr?.divisions || []).map(d =>
-        `<option value="${d._id}">Div ${d.name} (Roll ${d.rollRange.start}–${d.rollRange.end})</option>`
-      ).join("");
-  }
-
-  function onRosterYearChange() {
-    const year = +$("rYear").value;
-    const yr   = (dept?.years || []).find(y => y.year === year);
-    $("rDiv").innerHTML = `<option value="">— Division —</option>` +
-      (yr?.divisions || []).map(d =>
-        `<option value="${d._id}">Div ${d.name}</option>`
-      ).join("");
-    $("rosterBody").innerHTML = `<tr><td colspan="2"><div class="empty">Select a division.</div></td></tr>`;
-  }
-
-  async function uploadStudents() {
-    const year      = $("stuYear").value;
-    const divisionId = $("stuDiv").value;
-    const file      = $("stuFile").files[0];
-    const resultEl  = $("uploadResult");
-
-    if (!year)       return resultEl.innerHTML = `<div class="msg err">Please select a year.</div>`;
-    if (!divisionId) return resultEl.innerHTML = `<div class="msg err">Please select a division.</div>`;
-    if (!file)       return resultEl.innerHTML = `<div class="msg err">Please choose a file.</div>`;
-
-    const ext = file.name.split(".").pop().toLowerCase();
-    if (!["xlsx","xls","csv"].includes(ext))
-      return resultEl.innerHTML = `<div class="msg err">Only .xlsx or .csv files are supported.</div>`;
-
-    resultEl.innerHTML = `<div class="msg" style="color:var(--ink-muted);">Uploading…</div>`;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res  = await fetch(
-        `${API}/students/upload?divisionId=${divisionId}&year=${year}`,
-        {
-          method:  "POST",
-          headers: { Authorization: `Bearer ${token}` }, // ⚠️ No Content-Type — browser sets it with boundary
-          body:    formData,
-        }
-      );
+        })
+        .join("");
+    }
+    function populateTeacherSelect(selId, selectedId = "") {
+      $(selId).innerHTML =
+        `<option value="">— Assign later —</option>` +
+        teachers
+          .filter((t) => t.role === "subject_teacher")
+          .map(
+            (t) =>
+              `<option value="${t._id}"${t._id === selectedId ? " selected" : ""}>${t.name}</option>`,
+          )
+          .join("");
+    }
+    function openTeacherModal() {
+      ["tchName", "tchEmail", "tchPass"].forEach((id) => ($(id).value = ""));
+      $("tchRole").value = "subject_teacher";
+      $("teacherMsg").innerHTML = "";
+      openModal("teacherModal");
+    }
+    async function saveTeacher() {
+      const name = $("tchName").value.trim(),
+        email = $("tchEmail").value.trim();
+      const password = $("tchPass").value,
+        role = $("tchRole").value;
+      if (!name || !email || !password)
+        return showMsg("teacherMsg", "All fields are required.", "err");
+      if (password.length < 6)
+        return showMsg(
+          "teacherMsg",
+          "Password must be at least 6 characters.",
+          "err",
+        );
+      const res = await fetch(`${API}/users`, {
+        method: "POST",
+        headers: hdrs,
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role,
+          departmentId: deptId,
+        }),
+      });
       const data = await res.json();
+      if (!res.ok) return showMsg("teacherMsg", data.error, "err");
+      showMsg("teacherMsg", `Account created for ${name}.`, "ok");
+      setTimeout(() => {
+        closeModal("teacherModal");
+        loadTeachers();
+      }, 900);
+    }
+    async function deleteTeacher(id) {
+      if (!confirm("Delete this teacher account?")) return;
+      await fetch(`${API}/users/${id}`, { method: "DELETE", headers: hdrs });
+      loadTeachers();
+    }
 
-      if (!res.ok) {
-        resultEl.innerHTML = `<div class="msg err">${data.error || "Upload failed."}</div>`;
-        return;
-      }
+    /* ── Students ── */
 
-      // Success summary
-      let html = `
+    // Populate year + division selects in the Students tab (reuses dept data)
+    function initStudentTab() {
+      if (!dept) return;
+      const years = (dept.years || []).map((y) => y.year).sort();
+
+      // Upload selects
+      $("stuYear").innerHTML =
+        `<option value="">— Year —</option>` +
+        years.map((y) => `<option value="${y}">Year ${y}</option>`).join("");
+      $("stuDiv").innerHTML = `<option value="">— Division —</option>`;
+
+      // Roster preview selects
+      $("rYear").innerHTML =
+        `<option value="">— Year —</option>` +
+        years.map((y) => `<option value="${y}">Year ${y}</option>`).join("");
+      $("rDiv").innerHTML = `<option value="">— Division —</option>`;
+
+      $("uploadResult").innerHTML = "";
+      $("rosterBody").innerHTML =
+        `<tr><td colspan="2"><div class="empty">Select a year and division to preview.</div></td></tr>`;
+    }
+
+    function onStuYearChange() {
+      const year = +$("stuYear").value;
+      const yr = (dept?.years || []).find((y) => y.year === year);
+      $("stuDiv").innerHTML =
+        `<option value="">— Division —</option>` +
+        (yr?.divisions || [])
+          .map(
+            (d) =>
+              `<option value="${d._id}">Div ${d.name} (Roll ${d.rollRange.start}–${d.rollRange.end})</option>`,
+          )
+          .join("");
+    }
+
+    function onRosterYearChange() {
+      const year = +$("rYear").value;
+      const yr = (dept?.years || []).find((y) => y.year === year);
+      $("rDiv").innerHTML =
+        `<option value="">— Division —</option>` +
+        (yr?.divisions || [])
+          .map((d) => `<option value="${d._id}">Div ${d.name}</option>`)
+          .join("");
+      $("rosterBody").innerHTML =
+        `<tr><td colspan="2"><div class="empty">Select a division.</div></td></tr>`;
+    }
+
+    async function uploadStudents() {
+      const year = $("stuYear").value;
+      const divisionId = $("stuDiv").value;
+      const file = $("stuFile").files[0];
+      const resultEl = $("uploadResult");
+
+      if (!year)
+        return (resultEl.innerHTML = `<div class="msg err">Please select a year.</div>`);
+      if (!divisionId)
+        return (resultEl.innerHTML = `<div class="msg err">Please select a division.</div>`);
+      if (!file)
+        return (resultEl.innerHTML = `<div class="msg err">Please choose a file.</div>`);
+
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (!["xlsx", "xls", "csv"].includes(ext))
+        return (resultEl.innerHTML = `<div class="msg err">Only .xlsx or .csv files are supported.</div>`);
+
+      resultEl.innerHTML = `<div class="msg" style="color:var(--ink-muted);">Uploading…</div>`;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch(
+          `${API}/students/upload?divisionId=${divisionId}&year=${year}`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }, // ⚠️ No Content-Type — browser sets it with boundary
+            body: formData,
+          },
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          resultEl.innerHTML = `<div class="msg err">${data.error || "Upload failed."}</div>`;
+          return;
+        }
+
+        // Success summary
+        let html = `
         <div class="msg ok" style="margin-bottom:8px;">
           ✓ Upload complete —
           <strong>${data.upserted}</strong> new student${data.upserted !== 1 ? "s" : ""} added,
@@ -503,74 +816,82 @@
           (${data.total} rows processed)
         </div>`;
 
-      // Row-level errors (if any)
-      if (data.errors && data.errors.length) {
-        html += `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:10px 12px;font-size:12px;color:#7a5c00;">
+        // Row-level errors (if any)
+        if (data.errors && data.errors.length) {
+          html += `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:10px 12px;font-size:12px;color:#7a5c00;">
           <strong>⚠ ${data.errors.length} row issue${data.errors.length !== 1 ? "s" : ""}:</strong>
           <ul style="margin:6px 0 0;padding-left:16px;">
-            ${data.errors.map(e => `<li>${e}</li>`).join("")}
+            ${data.errors.map((e) => `<li>${e}</li>`).join("")}
           </ul>
         </div>`;
+        }
+
+        resultEl.innerHTML = html;
+
+        // Auto-refresh roster preview if it matches the uploaded division
+        if ($("rDiv").value === divisionId) loadRoster();
+      } catch (err) {
+        resultEl.innerHTML = `<div class="msg err">Network error: ${err.message}</div>`;
       }
-
-      resultEl.innerHTML = html;
-
-      // Auto-refresh roster preview if it matches the uploaded division
-      if ($("rDiv").value === divisionId) loadRoster();
-
-    } catch (err) {
-      resultEl.innerHTML = `<div class="msg err">Network error: ${err.message}</div>`;
-    }
-  }
-
-  async function loadRoster() {
-    const divisionId = $("rDiv").value;
-    const year       = $("rYear").value;
-    const tbody      = $("rosterBody");
-
-    if (!divisionId) {
-      tbody.innerHTML = `<tr><td colspan="2"><div class="empty">Select a division.</div></td></tr>`;
-      return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="2"><div class="empty">Loading…</div></td></tr>`;
+    async function loadRoster() {
+      const divisionId = $("rDiv").value;
+      const year = $("rYear").value;
+      const tbody = $("rosterBody");
 
-    try {
-      const params = new URLSearchParams({ divisionId });
-      if (year) params.set("year", year);
-      const res      = await fetch(`${API}/students?${params}`, { headers: hdrs });
-      const students = await res.json();
-
-      if (!students.length) {
-        tbody.innerHTML = `<tr><td colspan="2"><div class="empty">No students found for this division.</div></td></tr>`;
+      if (!divisionId) {
+        tbody.innerHTML = `<tr><td colspan="2"><div class="empty">Select a division.</div></td></tr>`;
         return;
       }
 
-      tbody.innerHTML = students.map(s =>
-        `<tr><td style="font-family:'DM Mono',monospace;font-size:13px;">${s.roll}</td><td>${s.name}</td></tr>`
-      ).join("");
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="2"><div class="empty" style="color:#c00;">Failed to load: ${err.message}</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="2"><div class="empty">Loading…</div></td></tr>`;
+
+      try {
+        const params = new URLSearchParams({ divisionId });
+        if (year) params.set("year", year);
+        const res = await fetch(`${API}/students?${params}`, {
+          headers: hdrs,
+        });
+        const students = await res.json();
+
+        if (!students.length) {
+          tbody.innerHTML = `<tr><td colspan="2"><div class="empty">No students found for this division.</div></td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = students
+          .map(
+            (s) =>
+              `<tr><td style="font-family:'DM Mono',monospace;font-size:13px;">${s.roll}</td><td>${s.name}</td></tr>`,
+          )
+          .join("");
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="2"><div class="empty" style="color:#c00;">Failed to load: ${err.message}</div></td></tr>`;
+      }
     }
-  }
 
-  // Download a minimal sample template as a CSV blob
-  function downloadTemplate(e) {
-    e.preventDefault();
-    const csv  = "roll,name\n101,Priya Sharma\n102,Rahul Mehta\n103,Sneha Patil\n";
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = "students_template.csv"; a.click();
-    URL.revokeObjectURL(url);
-  }
+    // Download a minimal sample template as a CSV blob
+    function downloadTemplate(e) {
+      e.preventDefault();
+      const csv =
+        "roll,name\n101,Priya Sharma\n102,Rahul Mehta\n103,Sneha Patil\n";
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "students_template.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
 
-  /* ── Init ── */
-  async function init() {
-    await loadDept();
-    await Promise.all([loadTeachers(), loadSubjects()]);
-  }
-  init();
-</script>
+    /* ── Init ── */
+    async function init() {
+      await loadDept();
+      await Promise.all([loadTeachers(), loadSubjects()]);
+    }
+    init();
+  </script>
 </body>
+
 </html>

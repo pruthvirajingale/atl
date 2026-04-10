@@ -1,325 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Attendance QR — Teacher Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="dashboard.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance QR — Teacher Portal</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="dashboard.css" />
 </head>
+
 <body>
-<div class="shell">
+  <div class="shell">
 
-  <!-- ── LOGIN SCREEN ── -->
-  <div id="loginScreen">
-    <div class="header">
-      <div>
-        <div class="header-label">Teacher Portal</div>
-        <h1>AttendQR</h1>
+    <!-- ── LOGIN SCREEN ── -->
+    <div id="loginScreen">
+      <div class="header">
+        <div>
+          <div class="header-label">Teacher Portal</div>
+          <h1>AttendQR</h1>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Sign In</div>
+        <div class="msg-err" id="loginError"></div>
+        <input type="email" id="emailInput" placeholder="teacher@college.edu" autocomplete="username" />
+        <input type="password" id="passInput" placeholder="Password" autocomplete="current-password" />
+        <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-label">Sign In</div>
-      <div class="msg-err" id="loginError"></div>
-      <input type="email" id="emailInput" placeholder="teacher@college.edu" autocomplete="username"/>
-      <input type="password" id="passInput" placeholder="Password" autocomplete="current-password"/>
-      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <!-- ── QR SCREEN ── -->
+    <div id="qrScreen">
+
+      <div class="top-bar">
+        <div class="logo-row" style="margin:0;">
+          <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;"></div>
+          <span class="logo-text" style="font-size:.95rem;">AttendQR</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.65rem;">
+          <div class="user-badge">
+            <div class="avatar" id="avatarEl"></div>
+            <span class="user-name" id="userNameEl"></span>
+            <span class="role-badge" id="roleBadgeEl"></span>
+          </div>
+          <button class="logout-btn" onclick="doLogout()">out</button>
+        </div>
+      </div>
+
+      <span class="date-chip" id="dateChip"></span>
+
+      <!-- Subject selector -->
+      <div class="section">
+        <div class="section-label">Your Subjects</div>
+        <div id="subjectGrid">
+          <div class="loading-spin"></div>
+        </div>
+        <div class="lt-toggle" id="ltToggle" style="display:none;">
+          <button class="lt-btn" id="ltTH" onclick="setLectureType('TH')">TH — Theory</button>
+          <button class="lt-btn" id="ltPR" onclick="setLectureType('PR')">PR — Practical</button>
+        </div>
+      </div>
+
+      <!-- QR display -->
+      <div class="qr-card" id="qrCard">
+        <div class="section-label" style="margin-bottom:14px;">Scan to Mark Attendance</div>
+        <div class="qr-wrap" id="qrWrap">
+          <div id="qrcode"></div>
+        </div>
+        <div class="qr-footer">
+          <div class="qr-subject-label" id="qrSubjectLabel"></div>
+          <div class="timer-badge">
+            <span class="timer-dot"></span>
+            <span id="timerLabel">30s</span>
+          </div>
+        </div>
+        <div class="qr-url" id="qrHint"></div>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
+        No subjects assigned to your account.<br />Contact your HOD or admin.
+      </div>
+
     </div>
   </div>
 
-  <!-- ── QR SCREEN ── -->
-  <div id="qrScreen">
+  <script>
+    const BASE_URL = window.location.origin;
+    const REFRESH_SEC = 30;
+    document.getElementById("qrHint").style.display = "none";
+    let token = localStorage.getItem('qr_token') || null;
+    let userData = JSON.parse(localStorage.getItem('qr_user') || 'null');
+    let subjects = [];
+    let selectedSubj = null;
+    let lectureType = 'TH';
+    let refreshTimer = null;
+    let countDown = REFRESH_SEC;
 
-    <div class="top-bar">
-      <div class="logo-row" style="margin:0;">
-        <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;"></div>
-        <span class="logo-text" style="font-size:.95rem;">AttendQR</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:.65rem;">
-        <div class="user-badge">
-          <div class="avatar" id="avatarEl"></div>
-          <span class="user-name" id="userNameEl"></span>
-          <span class="role-badge" id="roleBadgeEl"></span>
-        </div>
-        <button class="logout-btn" onclick="doLogout()">out</button>
-      </div>
-    </div>
+    document.addEventListener('DOMContentLoaded', () => {
+      setDateChip();
 
-    <span class="date-chip" id="dateChip"></span>
+      if (token && userData) { showQrScreen(); loadSubjects(); }
 
-    <!-- Subject selector -->
-    <div class="section">
-      <div class="section-label">Your Subjects</div>
-      <div id="subjectGrid"><div class="loading-spin"></div></div>
-      <div class="lt-toggle" id="ltToggle" style="display:none;">
-        <button class="lt-btn" id="ltTH" onclick="setLectureType('TH')">TH — Theory</button>
-        <button class="lt-btn" id="ltPR" onclick="setLectureType('PR')">PR — Practical</button>
-      </div>
-    </div>
-
-    <!-- QR display -->
-    <div class="qr-card" id="qrCard">
-      <div class="section-label" style="margin-bottom:14px;">Scan to Mark Attendance</div>
-      <div class="qr-wrap" id="qrWrap">
-        <div id="qrcode"></div>
-        <div class="refresh-ring">
-          <svg viewBox="0 0 108 108">
-            <rect class="ring-track" x="3" y="3" width="102" height="102" rx="15"/>
-            <rect class="ring-prog" id="ringProg" x="3" y="3" width="102" height="102" rx="15"/>
-          </svg>
-        </div>
-      </div>
-      <div class="qr-footer">
-        <div class="qr-subject-label" id="qrSubjectLabel"></div>
-        <div class="timer-badge">
-          <span class="timer-dot"></span>
-          <span id="timerLabel">30s</span>
-        </div>
-      </div>
-      <div class="qr-url" id="qrHint"></div>
-    </div>
-
-    <div class="empty-state" id="emptyState" style="display:none;">
-      No subjects assigned to your account.<br/>Contact your HOD or admin.
-    </div>
-
-  </div>
-</div>
-
-<script>
-const BASE_URL    = window.location.origin;
-const REFRESH_SEC = 30;
-document.getElementById("qrHint").style.display = "none";
-let token        = localStorage.getItem('qr_token') || null;
-let userData     = JSON.parse(localStorage.getItem('qr_user') || 'null');
-let subjects     = [];
-let selectedSubj = null;
-let lectureType  = 'TH';
-let refreshTimer = null;
-let countDown    = REFRESH_SEC;
-
-const PERIM = 396;
-let ringEl;
-
-document.addEventListener('DOMContentLoaded', () => {
-  ringEl = document.getElementById('ringProg');
-  ringEl.style.strokeDasharray  = PERIM;
-  ringEl.style.strokeDashoffset = 0;
-
-  setDateChip();
-
-  if (token && userData) { showQrScreen(); loadSubjects(); }
-
-  document.getElementById('emailInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('passInput').focus();
-  });
-  document.getElementById('passInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-});
-
-function setDateChip() {
-  document.getElementById('dateChip').textContent = new Date().toLocaleDateString('en-IN', {
-    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
-  });
-}
-
-async function doLogin() {
-  const email    = document.getElementById('emailInput').value.trim();
-  const password = document.getElementById('passInput').value;
-  const errEl    = document.getElementById('loginError');
-  const btn      = document.getElementById('loginBtn');
-
-  errEl.style.display = 'none';
-  if (!email || !password) { showErr('Please enter email and password.'); return; }
-
-  btn.textContent = 'Signing in…'; btn.disabled = true;
-
-  try {
-    const res  = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      document.getElementById('emailInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('passInput').focus();
+      });
+      document.getElementById('passInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
     });
-    const data = await res.json();
 
-    if (!res.ok) {
-      showErr(data.error || 'Login failed.');
-      btn.textContent = 'Sign In'; btn.disabled = false; return;
+    function setDateChip() {
+      document.getElementById('dateChip').textContent = new Date().toLocaleDateString('en-IN', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+      });
     }
 
-    const allowed = ['subject_teacher', 'class_teacher', 'hod', 'admin'];
-    if (!allowed.includes(data.role)) {
-      showErr('This portal is for teachers only.');
-      btn.textContent = 'Sign In'; btn.disabled = false; return;
+    async function doLogin() {
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passInput').value;
+      const errEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
+      errEl.style.display = 'none';
+      if (!email || !password) { showErr('Please enter email and password.'); return; }
+
+      btn.textContent = 'Signing in…'; btn.disabled = true;
+
+      try {
+        const res = await fetch(`${BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showErr(data.error || 'Login failed.');
+          btn.textContent = 'Sign In'; btn.disabled = false; return;
+        }
+
+        const allowed = ['subject_teacher', 'class_teacher', 'hod', 'admin'];
+        if (!allowed.includes(data.role)) {
+          showErr('This portal is for teachers only.');
+          btn.textContent = 'Sign In'; btn.disabled = false; return;
+        }
+
+        token = data.token;
+        userData = { name: data.name, role: data.role };
+        localStorage.setItem('qr_token', token);
+        localStorage.setItem('qr_user', JSON.stringify(userData));
+
+        showQrScreen(); loadSubjects();
+
+      } catch {
+        showErr('Could not reach server. Check your connection.');
+        btn.textContent = 'Sign In'; btn.disabled = false;
+      }
     }
 
-    token    = data.token;
-    userData = { name: data.name, role: data.role };
-    localStorage.setItem('qr_token', token);
-    localStorage.setItem('qr_user',  JSON.stringify(userData));
+    function doLogout() {
+      clearInterval(refreshTimer);
+      token = null; userData = null; selectedSubj = null; subjects = [];
+      localStorage.removeItem('qr_token'); localStorage.removeItem('qr_user');
 
-    showQrScreen(); loadSubjects();
+      document.getElementById('qrScreen').style.display = 'none';
+      const ls = document.getElementById('loginScreen');
+      ls.style.display = 'block'; ls.style.animation = 'none';
+      void ls.offsetWidth; ls.style.animation = '';
 
-  } catch {
-    showErr('Could not reach server. Check your connection.');
-    btn.textContent = 'Sign In'; btn.disabled = false;
-  }
-}
-
-function doLogout() {
-  clearInterval(refreshTimer);
-  token = null; userData = null; selectedSubj = null; subjects = [];
-  localStorage.removeItem('qr_token'); localStorage.removeItem('qr_user');
-
-  document.getElementById('qrScreen').style.display = 'none';
-  const ls = document.getElementById('loginScreen');
-  ls.style.display = 'block'; ls.style.animation = 'none';
-  void ls.offsetWidth; ls.style.animation = '';
-
-  document.getElementById('emailInput').value = '';
-  document.getElementById('passInput').value  = '';
-  document.getElementById('loginBtn').textContent = 'Sign In';
-  document.getElementById('loginBtn').disabled    = false;
-  document.getElementById('loginError').style.display = 'none';
-}
-
-function showErr(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = msg; el.style.display = 'block';
-}
-
-function showQrScreen() {
-  document.getElementById('loginScreen').style.display = 'none';
-  const qs = document.getElementById('qrScreen');
-  qs.style.display = 'block';
-  document.getElementById('userNameEl').textContent  = userData.name;
-  document.getElementById('roleBadgeEl').textContent = userData.role.replace('_', ' ');
-}
-
-async function loadSubjects() {
-  const grid = document.getElementById('subjectGrid');
-  grid.innerHTML = '<div class="loading-spin"></div>';
-  document.getElementById('emptyState').style.display = 'none';
-
-  try {
-    const res = await fetch(`${BASE_URL}/subjects`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (res.status === 401) { doLogout(); return; }
-    subjects = await res.json();
-    grid.innerHTML = '';
-
-    if (!subjects.length) {
-      document.getElementById('emptyState').style.display = 'block'; return;
+      document.getElementById('emailInput').value = '';
+      document.getElementById('passInput').value = '';
+      document.getElementById('loginBtn').textContent = 'Sign In';
+      document.getElementById('loginBtn').disabled = false;
+      document.getElementById('loginError').style.display = 'none';
     }
 
-    subjects.forEach(s => {
-      const item = document.createElement('div');
-      item.className  = 'subject-item';
-      item.dataset.id = s._id;
-      const badgeCls = s.type === 'TH+PR' ? 'badge-THPR' : s.type === 'PR' ? 'badge-PR' : 'badge-TH';
-      item.innerHTML = `
+    function showErr(msg) {
+      const el = document.getElementById('loginError');
+      el.textContent = msg; el.style.display = 'block';
+    }
+
+    function showQrScreen() {
+      document.getElementById('loginScreen').style.display = 'none';
+      const qs = document.getElementById('qrScreen');
+      qs.style.display = 'block';
+      document.getElementById('userNameEl').textContent = userData.name;
+      document.getElementById('roleBadgeEl').textContent = userData.role.replace('_', ' ');
+    }
+
+    async function loadSubjects() {
+      const grid = document.getElementById('subjectGrid');
+      grid.innerHTML = '<div class="loading-spin"></div>';
+      document.getElementById('emptyState').style.display = 'none';
+
+      try {
+        const res = await fetch(`${BASE_URL}/subjects`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.status === 401) { doLogout(); return; }
+        subjects = await res.json();
+        grid.innerHTML = '';
+
+        if (!subjects.length) {
+          document.getElementById('emptyState').style.display = 'block'; return;
+        }
+
+        subjects.forEach(s => {
+          const item = document.createElement('div');
+          item.className = 'subject-item';
+          item.dataset.id = s._id;
+          const badgeCls = s.type === 'TH+PR' ? 'badge-THPR' : s.type === 'PR' ? 'badge-PR' : 'badge-TH';
+          item.innerHTML = `
         <div class="subj-info">
           <div class="subj-name">${s.name}</div>
           <div class="subj-meta">${s.code} · Y${s.year} S${s.semester} · ${s.divisionName}</div>
         </div>
         <span class="type-badge ${badgeCls}">${s.type}</span>
       `;
-      item.addEventListener('click', () => selectSubject(s));
-      grid.appendChild(item);
-    });
+          item.addEventListener('click', () => selectSubject(s));
+          grid.appendChild(item);
+        });
 
-  } catch {
-    grid.innerHTML = `<div class="empty-state">Failed to load subjects.</div>`;
-  }
-}
+      } catch {
+        grid.innerHTML = `<div class="empty-state">Failed to load subjects.</div>`;
+      }
+    }
 
-function selectSubject(subj) {
-  selectedSubj = subj;
-  document.querySelectorAll('.subject-item').forEach(el => el.classList.remove('active'));
-  document.querySelector(`.subject-item[data-id="${subj._id}"]`).classList.add('active');
+    function selectSubject(subj) {
+      selectedSubj = subj;
+      document.querySelectorAll('.subject-item').forEach(el => el.classList.remove('active'));
+      document.querySelector(`.subject-item[data-id="${subj._id}"]`).classList.add('active');
 
-  const ltToggle = document.getElementById('ltToggle');
-  if (subj.type === 'TH+PR') {
-    ltToggle.style.display = 'flex';
-    setLectureType(lectureType);
-  } else {
-    ltToggle.style.display = 'none';
-    lectureType = subj.type === 'PR' ? 'PR' : 'TH';
-  }
-  generateQR();
-}
+      const ltToggle = document.getElementById('ltToggle');
+      if (subj.type === 'TH+PR') {
+        ltToggle.style.display = 'flex';
+        setLectureType(lectureType);
+      } else {
+        ltToggle.style.display = 'none';
+        lectureType = subj.type === 'PR' ? 'PR' : 'TH';
+      }
+      generateQR();
+    }
 
-function setLectureType(lt) {
-  lectureType = lt;
-  document.getElementById('ltTH').className = 'lt-btn' + (lt === 'TH' ? ' active-th' : '');
-  document.getElementById('ltPR').className = 'lt-btn' + (lt === 'PR' ? ' active-pr' : '');
-  if (selectedSubj) generateQR();
-}
+    function setLectureType(lt) {
+      lectureType = lt;
+      document.getElementById('ltTH').className = 'lt-btn' + (lt === 'TH' ? ' active-th' : '');
+      document.getElementById('ltPR').className = 'lt-btn' + (lt === 'PR' ? ' active-pr' : '');
+      if (selectedSubj) generateQR();
+    }
 
-function todayISO() { return new Date().toISOString().split('T')[0]; }
+    function todayISO() { return new Date().toISOString().split('T')[0]; }
 
-function buildCheckinURL(subj, lt) {
-  const params = new URLSearchParams({ subjectId: subj._id, lectureType: lt, date: todayISO() });
-  return `${BASE_URL}/checkin?${params.toString()}`;
-}
+    function buildCheckinURL(subj, lt) {
+      const params = new URLSearchParams({ subjectId: subj._id, lectureType: lt, date: todayISO() });
+      return `${BASE_URL}/checkin?${params.toString()}`;
+    }
 
-function generateQR() {
-  if (!selectedSubj) return;
-  clearInterval(refreshTimer);
-  document.getElementById('qrCard').classList.add('visible');
-  const url = buildCheckinURL(selectedSubj, lectureType);
-  renderQR(url); updateLabels(url); startCountdown();
-}
+    function generateQR() {
+      if (!selectedSubj) return;
+      clearInterval(refreshTimer);
+      document.getElementById('qrCard').classList.add('visible');
+      const url = buildCheckinURL(selectedSubj, lectureType);
+      renderQR(url); updateLabels(url); startCountdown();
+    }
 
-function renderQR(url) {
-  const container = document.getElementById('qrcode');
-  container.innerHTML = '';
-  new QRCode(container, {
-    text: url, width: 224, height: 224,
-    colorDark: '#0d0d0d', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.H
-  });
-}
+    function renderQR(url) {
+      const container = document.getElementById('qrcode');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: url, width: 224, height: 224,
+        colorDark: '#0d0d0d', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
 
-function updateLabels(url) {
-  const ispr  = lectureType === 'PR';
-  const typeColor = ispr ? 'var(--pr-color)' : 'var(--th-color)';
-  const typeLabel = ispr ? 'Practical' : 'Theory';
+    function updateLabels(url) {
+      const ispr = lectureType === 'PR';
+      const typeColor = ispr ? 'var(--pr-color)' : 'var(--th-color)';
+      const typeLabel = ispr ? 'Practical' : 'Theory';
 
-  document.getElementById('qrSubjectLabel').innerHTML =
-    `<span style="color:${color};font-size:.75rem;">${label}</span><br>
+      document.getElementById('qrSubjectLabel').innerHTML =
+        `<span style="color:${typeColor};font-size:.75rem;">${typeLabel}</span><br>
      <strong>${selectedSubj.code}</strong> — ${selectedSubj.name} <span style="color:var(--muted);font-size:.75rem;">(${selectedSubj.divisionName})</span>`;
 
-  document.getElementById('qrHint').textContent = url;
-}
-
-function startCountdown() {
-  countDown = REFRESH_SEC; tickTimer();
-  refreshTimer = setInterval(() => {
-    countDown--; tickTimer();
-    if (countDown <= 0) {
-      const url = buildCheckinURL(selectedSubj, lectureType);
-      renderQR(url); updateLabels(url); countDown = REFRESH_SEC;
+      document.getElementById('qrHint').textContent = url;
     }
-  }, 1000);
-}
 
-function tickTimer() {
-  document.getElementById('timerLabel').textContent = `${countDown}s`;
+    function startCountdown() {
+      countDown = REFRESH_SEC; tickTimer();
+      refreshTimer = setInterval(() => {
+        countDown--; tickTimer();
+        if (countDown <= 0) {
+          const url = buildCheckinURL(selectedSubj, lectureType);
+          renderQR(url); updateLabels(url); countDown = REFRESH_SEC;
+        }
+      }, 1000);
+    }
 
-  // Ring progress
-  const frac = countDown / REFRESH_SEC;
-  ringEl.style.strokeDashoffset = PERIM * (1 - frac);
-
-  // Colour gradient as time runs out
-  if (frac > .5)       ringEl.style.stroke = 'var(--accent)';
-  else if (frac > .25) ringEl.style.stroke = 'var(--warn)';
-  else                 ringEl.style.stroke = 'var(--err)';
-}
-</script>
+    function tickTimer() {
+      document.getElementById('timerLabel').textContent = `${countDown}s`;
+    }
+  </script>
 </body>
+
 </html>

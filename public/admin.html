@@ -1,170 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="dashboard.css" />
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
 
-<nav>
-  <div class="nav-left">
-    <div class="nav-dot"></div>
-    <span class="nav-title">Admin</span>
-  </div>
-  <span class="nav-name" id="navName"></span>
-  <button class="btn-logout" onclick="logout()">Sign out</button>
-</nav>
-
-<div class="page">
-
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('departments')">Departments</button>
-    <button class="tab"        onclick="switchTab('hods')">HODs</button>
-  </div>
-
-  <!-- DEPARTMENTS -->
-  <div id="tab-departments">
-    <div class="sec-head">
-      <span class="sec-title">Departments</span>
-      <button class="btn-add" onclick="openDeptModal()">+ Add Department</button>
-    </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table class="tbl">
-        <thead><tr><th>Name</th><th>Code</th><th>HOD</th><th>Years / Divisions</th><th></th></tr></thead>
-        <tbody id="deptBody"><tr><td colspan="5"><div class="empty">Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- HODs -->
-  <div id="tab-hods" style="display:none;">
-    <div class="sec-head">
-      <span class="sec-title">HODs</span>
-      <button class="btn-add" onclick="openHodModal()">+ Add HOD</button>
-    </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table class="tbl">
-        <thead><tr><th>Name</th><th>Email</th><th>Department</th><th></th></tr></thead>
-        <tbody id="hodBody"><tr><td colspan="4"><div class="empty">Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
-<!-- DEPARTMENT MODAL -->
-<div class="overlay" id="deptModal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title" id="deptModalTitle">Add Department</span>
-      <button class="modal-close" onclick="closeModal('deptModal')">✕</button>
-    </div>
-    <input type="hidden" id="deptEditId" />
-    <div class="form-grid" style="margin-bottom:12px;">
-      <div class="field"><label>Department Name</label><input type="text" id="deptName" placeholder="e.g. Computer Science" /></div>
-      <div class="field"><label>Code</label><input type="text" id="deptCode" placeholder="e.g. CS" /></div>
-    </div>
-    <div style="margin-bottom:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <label class="field-label">Years & Divisions</label>
-        <button class="btn-sm btn-ghost" onclick="addYearBlock()">+ Year</button>
+  <body>
+    <nav>
+      <div class="nav-left">
+        <div class="nav-dot"></div>
+        <span class="nav-title">Admin</span>
       </div>
-      <div id="yearsBuilder"></div>
-    </div>
-    <div id="deptMsg"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="saveDept()">Save Department</button>
-  </div>
-</div>
+      <span class="nav-name" id="navName"></span>
+      <button class="btn-logout" onclick="logout()">Sign out</button>
+    </nav>
 
-<!-- HOD MODAL -->
-<div class="overlay" id="hodModal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title" id="hodModalTitle">Add HOD</span>
-      <button class="modal-close" onclick="closeModal('hodModal')">✕</button>
-    </div>
-    <input type="hidden" id="hodEditId" />
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="field"><label>Full Name</label><input type="text" id="hodName" placeholder="e.g. Dr. Ramesh Patil" /></div>
-      <div class="field"><label>Email</label><input type="email" id="hodEmail" placeholder="hod@college.edu" /></div>
-      <div class="field" id="hodPassField">
-        <label id="hodPassLabel">Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="hodPass" placeholder="Set a password to share" />
-          <button class="pw-toggle" onclick="togglePw('hodPass', this)">Show</button>
+    <div class="page">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('departments')">
+          Departments
+        </button>
+        <button class="tab" onclick="switchTab('hods')">HODs</button>
+      </div>
+
+      <!-- DEPARTMENTS -->
+      <div id="tab-departments">
+        <div class="sec-head">
+          <span class="sec-title">Departments</span>
+          <button class="btn-add" onclick="openDeptModal()">
+            + Add Department
+          </button>
+        </div>
+        <div class="card" style="padding: 0; overflow: hidden">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Code</th>
+                <th>HOD</th>
+                <th>Years / Divisions</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="deptBody">
+              <tr>
+                <td colspan="5">
+                  <div class="empty">Loading…</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="field">
-        <label>Department</label>
-        <select id="hodDept"><option value="">— Select department —</option></select>
+
+      <!-- HODs -->
+      <div id="tab-hods" style="display: none">
+        <div class="sec-head">
+          <span class="sec-title">HODs</span>
+          <button class="btn-add" onclick="openHodModal()">+ Add HOD</button>
+        </div>
+        <div class="card" style="padding: 0; overflow: hidden">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="hodBody">
+              <tr>
+                <td colspan="4">
+                  <div class="empty">Loading…</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div id="hodMsg"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="saveHod()">Save HOD</button>
-  </div>
-</div>
 
-<script>
-  const API   = "https://attendance-version-1.vercel.app";
-  const token = localStorage.getItem("token");
-  if (!token || localStorage.getItem("role") !== "admin") window.location.href = "login.html";
+    <!-- DEPARTMENT MODAL -->
+    <div class="overlay" id="deptModal">
+      <div class="modal">
+        <div class="modal-head">
+          <span class="modal-title" id="deptModalTitle">Add Department</span>
+          <button class="modal-close" onclick="closeModal('deptModal')">
+            ✕
+          </button>
+        </div>
+        <input type="hidden" id="deptEditId" />
+        <div class="form-grid" style="margin-bottom: 12px">
+          <div class="field">
+            <label>Department Name</label
+            ><input
+              type="text"
+              id="deptName"
+              placeholder="e.g. Computer Science"
+            />
+          </div>
+          <div class="field">
+            <label>Code</label
+            ><input type="text" id="deptCode" placeholder="e.g. CS" />
+          </div>
+        </div>
+        <div style="margin-bottom: 10px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            "
+          >
+            <label class="field-label">Years & Divisions</label>
+            <button class="btn-sm btn-ghost" onclick="addYearBlock()">
+              + Year
+            </button>
+          </div>
+          <div id="yearsBuilder"></div>
+        </div>
+        <div id="deptMsg"></div>
+        <button
+          class="btn btn-primary"
+          style="width: 100%; margin-top: 4px"
+          onclick="saveDept()"
+        >
+          Save Department
+        </button>
+      </div>
+    </div>
 
-  const hdrs = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-  document.getElementById("navName").textContent = localStorage.getItem("name") || "Admin";
+    <!-- HOD MODAL -->
+    <div class="overlay" id="hodModal">
+      <div class="modal">
+        <div class="modal-head">
+          <span class="modal-title" id="hodModalTitle">Add HOD</span>
+          <button class="modal-close" onclick="closeModal('hodModal')">
+            ✕
+          </button>
+        </div>
+        <input type="hidden" id="hodEditId" />
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <div class="field">
+            <label>Full Name</label
+            ><input
+              type="text"
+              id="hodName"
+              placeholder="e.g. Dr. Ramesh Patil"
+            />
+          </div>
+          <div class="field">
+            <label>Email</label
+            ><input type="email" id="hodEmail" placeholder="hod@college.edu" />
+          </div>
+          <div class="field" id="hodPassField">
+            <label id="hodPassLabel">Password</label>
+            <div class="pw-wrap">
+              <input
+                type="password"
+                id="hodPass"
+                placeholder="Set a password to share"
+              />
+              <button class="pw-toggle" onclick="togglePw('hodPass', this)">
+                Show
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Department</label>
+            <select id="hodDept">
+              <option value="">— Select department —</option>
+            </select>
+          </div>
+        </div>
+        <div id="hodMsg"></div>
+        <button
+          class="btn btn-primary"
+          style="width: 100%; margin-top: 16px"
+          onclick="saveHod()"
+        >
+          Save HOD
+        </button>
+      </div>
+    </div>
 
-  const TABS = ["departments", "hods"];
+    <script>
+      const API = "https://attendance-version-1.vercel.app";
+      const token = localStorage.getItem("token");
+      if (!token || localStorage.getItem("role") !== "admin")
+        window.location.href = "login.html";
 
-  function $(id) { return document.getElementById(id); }
-  function logout() { localStorage.clear(); window.location.href = "login.html"; }
-  function showMsg(elId, text, type) { $(elId).innerHTML = `<div class="msg ${type}">${text}</div>`; }
-  function openModal(id)  { $(id).classList.add("open"); }
-  function closeModal(id) { $(id).classList.remove("open"); }
+      const hdrs = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+      document.getElementById("navName").textContent =
+        localStorage.getItem("name") || "Admin";
 
-  function togglePw(inputId, btn) {
-    const inp = $(inputId), show = inp.type === "password";
-    inp.type = show ? "text" : "password";
-    btn.textContent = show ? "Hide" : "Show";
-  }
+      const TABS = ["departments", "hods"];
 
-  function switchTab(name) {
-    TABS.forEach(t => { $(`tab-${t}`).style.display = t === name ? "" : "none"; });
-    document.querySelectorAll(".tab").forEach((btn, i) => btn.classList.toggle("active", TABS[i] === name));
-    if (name === "hods") loadHods();
-  }
+      function $(id) {
+        return document.getElementById(id);
+      }
+      function logout() {
+        localStorage.clear();
+        window.location.href = "login.html";
+      }
+      function showMsg(elId, text, type) {
+        $(elId).innerHTML = `<div class="msg ${type}">${text}</div>`;
+      }
+      function openModal(id) {
+        $(id).classList.add("open");
+      }
+      function closeModal(id) {
+        $(id).classList.remove("open");
+      }
 
-  document.querySelectorAll(".overlay").forEach(el =>
-    el.addEventListener("click", e => { if (e.target === el) el.classList.remove("open"); })
-  );
+      function togglePw(inputId, btn) {
+        const inp = $(inputId),
+          show = inp.type === "password";
+        inp.type = show ? "text" : "password";
+        btn.textContent = show ? "Hide" : "Show";
+      }
 
+      function switchTab(name) {
+        TABS.forEach((t) => {
+          $(`tab-${t}`).style.display = t === name ? "" : "none";
+        });
+        document
+          .querySelectorAll(".tab")
+          .forEach((btn, i) =>
+            btn.classList.toggle("active", TABS[i] === name),
+          );
+        if (name === "hods") loadHods();
+      }
 
-  /* ── Departments ── */
+      document.querySelectorAll(".overlay").forEach((el) =>
+        el.addEventListener("click", (e) => {
+          if (e.target === el) el.classList.remove("open");
+        }),
+      );
 
-  let depts = [];
+      /* ── Departments ── */
 
-  async function loadDepts() {
-    const res = await fetch(`${API}/departments`, { headers: hdrs });
-    depts = await res.json();
-    renderDepts();
-    populateDeptSelect();
-  }
+      let depts = [];
 
-  function renderDepts() {
-    const tbody = $("deptBody");
-    if (!depts.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No departments yet.</div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = depts.map(d => {
-      const yearSummary = (d.years || [])
-        .map(y => `Y${y.year}: ${(y.divisions || []).map(dv => `Div ${dv.name} (${dv.rollRange.start}–${dv.rollRange.end})`).join(", ")}`)
-        .join(" | ") || "—";
-      const hod = d.hodId
-        ? `<span class="pill pill-green">${d.hodId.name}</span>`
-        : `<span class="pill pill-yellow">Unassigned</span>`;
-      return `<tr>
+      async function loadDepts() {
+        const res = await fetch(`${API}/departments`, { headers: hdrs });
+        depts = await res.json();
+        renderDepts();
+        populateDeptSelect();
+      }
+
+      function renderDepts() {
+        const tbody = $("deptBody");
+        if (!depts.length) {
+          tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No departments yet.</div></td></tr>`;
+          return;
+        }
+        tbody.innerHTML = depts
+          .map((d) => {
+            const yearSummary =
+              (d.years || [])
+                .map(
+                  (y) =>
+                    `Y${y.year}: ${(y.divisions || []).map((dv) => `Div ${dv.name} (${dv.rollRange.start}–${dv.rollRange.end})`).join(", ")}`,
+                )
+                .join(" | ") || "—";
+            const hod = d.hodId
+              ? `<span class="pill pill-green">${d.hodId.name}</span>`
+              : `<span class="pill pill-yellow">Unassigned</span>`;
+            return `<tr>
         <td><strong>${d.name}</strong></td>
         <td><span class="pill pill-blue">${d.code}</span></td>
         <td>${hod}</td>
@@ -174,59 +288,69 @@
           <button class="btn-sm btn-danger"  onclick="deleteDept('${d._id}')">Delete</button>
         </div></td>
       </tr>`;
-    }).join("");
-  }
+          })
+          .join("");
+      }
 
-  function populateDeptSelect() {
-    const cur = $("hodDept").value;
-    $("hodDept").innerHTML = `<option value="">— Select department —</option>` +
-      depts.map(d => `<option value="${d._id}">${d.name} (${d.code})</option>`).join("");
-    if (cur) $("hodDept").value = cur;
-  }
+      function populateDeptSelect() {
+        const cur = $("hodDept").value;
+        $("hodDept").innerHTML =
+          `<option value="">— Select department —</option>` +
+          depts
+            .map(
+              (d) => `<option value="${d._id}">${d.name} (${d.code})</option>`,
+            )
+            .join("");
+        if (cur) $("hodDept").value = cur;
+      }
+      //ha code department chya dropdown madhe select karaycha asel tar populateDeptSelect() function call kara
 
-  function openDeptModal() {
-    $("deptEditId").value = "";
-    $("deptModalTitle").textContent = "Add Department";
-    $("deptName").value = "";
-    $("deptCode").value = "";
-    $("deptMsg").innerHTML = "";
-    $("yearsBuilder").innerHTML = "";
-    addYearBlock();
-    openModal("deptModal");
-  }
+      function openDeptModal() {
+        $("deptEditId").value = "";
+        $("deptModalTitle").textContent = "Add Department";
+        $("deptName").value = "";
+        $("deptCode").value = "";
+        $("deptMsg").innerHTML = "";
+        $("yearsBuilder").innerHTML = "";
+        addYearBlock();
+        openModal("deptModal");
+      }
+      // ha code department module open kary sathi aahe ya madhe pahile jo hi data asel toh remove hoil ek clean slate distel navin add karata na
 
-  function editDept(id) {
-    const d = depts.find(x => x._id === id);
-    if (!d) return;
-    $("deptEditId").value = id;
-    $("deptModalTitle").textContent = "Edit Department";
-    $("deptName").value = d.name;
-    $("deptCode").value = d.code;
-    $("deptMsg").innerHTML = "";
-    $("yearsBuilder").innerHTML = "";
-    (d.years || []).forEach(y => {
-      addYearBlock(y.year);
-      (y.divisions || []).forEach((div, i) => {
-        if (i > 0) addDivRow(y.year);
-        const rows   = $(`divs-${y.year}`).querySelectorAll(".div-row");
-        const inputs = rows[rows.length - 1].querySelectorAll("input");
-        inputs[0].value = div.name;
-        inputs[1].value = div.rollRange.start;
-        inputs[2].value = div.rollRange.end;
-      });
-    });
-    if (!(d.years || []).length) addYearBlock();
-    openModal("deptModal");
-  }
+      function editDept(id) {
+        const d = depts.find((x) => x._id === id);
+        if (!d) return;
+        $("deptEditId").value = id;
+        $("deptModalTitle").textContent = "Edit Department";
+        $("deptName").value = d.name;
+        $("deptCode").value = d.code;
+        $("deptMsg").innerHTML = "";
+        $("yearsBuilder").innerHTML = "";
+        (d.years || []).forEach((y) => {
+          addYearBlock(y.year);
+          (y.divisions || []).forEach((div, i) => {
+            if (i > 0) addDivRow(y.year);
+            const rows = $(`divs-${y.year}`).querySelectorAll(".div-row");
+            const inputs = rows[rows.length - 1].querySelectorAll("input");
+            inputs[0].value = div.name;
+            inputs[1].value = div.rollRange.start;
+            inputs[2].value = div.rollRange.end;
+          });
+        });
+        if (!(d.years || []).length) addYearBlock();
+        openModal("deptModal");
+      }
 
-  function addYearBlock(forceYear) {
-    const existing = Array.from(document.querySelectorAll(".year-block")).map(b => +b.dataset.year);
-    const next = forceYear || [1, 2, 3].find(y => !existing.includes(y));
-    if (!next) return;
-    const block = document.createElement("div");
-    block.className = "year-block";
-    block.dataset.year = next;
-    block.innerHTML = `
+      function addYearBlock(forceYear) {
+        const existing = Array.from(
+          document.querySelectorAll(".year-block"),
+        ).map((b) => +b.dataset.year);
+        const next = forceYear || [1, 2, 3].find((y) => !existing.includes(y));
+        if (!next) return;
+        const block = document.createElement("div");
+        block.className = "year-block";
+        block.dataset.year = next;
+        block.innerHTML = `
       <div class="year-block-head">
         <span class="year-label">Year ${next}</span>
         <div style="display:flex;gap:6px;">
@@ -235,85 +359,104 @@
         </div>
       </div>
       <div id="divs-${next}"></div>`;
-    $("yearsBuilder").appendChild(block);
-    addDivRow(next);
-  }
+        $("yearsBuilder").appendChild(block);
+        addDivRow(next);
+      }
 
-  function removeYearBlock(year) {
-    document.querySelector(`.year-block[data-year="${year}"]`)?.remove();
-  }
+      function removeYearBlock(year) {
+        document.querySelector(`.year-block[data-year="${year}"]`)?.remove();
+      }
 
-  function addDivRow(year) {
-    const container = $(`divs-${year}`);
-    const idx = container.querySelectorAll(".div-row").length;
-    const label = idx === 0;
-    const row = document.createElement("div");
-    row.className = "div-row";
-    row.innerHTML = `
+      function addDivRow(year) {
+        const container = $(`divs-${year}`);
+        const idx = container.querySelectorAll(".div-row").length;
+        const label = idx === 0;
+        const row = document.createElement("div");
+        row.className = "div-row";
+        row.innerHTML = `
       <div class="field">${label ? "<label>Division</label>" : ""}<input type="text" placeholder="e.g. A" style="text-transform:uppercase;" maxlength="2" /></div>
       <div class="field">${label ? "<label>Roll Start</label>" : ""}<input type="number" placeholder="1" min="1" /></div>
       <div class="field">${label ? "<label>Roll End</label>" : ""}<input type="number" placeholder="63" min="1" /></div>
       <button class="btn-sm btn-danger" style="margin-top:${label ? "18px" : "0"}" onclick="this.parentElement.remove()">✕</button>`;
-    container.appendChild(row);
-  }
-
-  function collectYears() {
-    const years = [];
-    for (const block of document.querySelectorAll(".year-block")) {
-      const year = +block.dataset.year, divisions = [];
-      for (const row of block.querySelectorAll(".div-row")) {
-        const [nameIn, startIn, endIn] = row.querySelectorAll("input");
-        const name = nameIn.value.trim().toUpperCase(), start = +startIn.value, end = +endIn.value;
-        if (!name || !start || !end) return null;
-        divisions.push({ name, rollRange: { start, end } });
+        container.appendChild(row);
       }
-      if (divisions.length) years.push({ year, divisions });
-    }
-    return years;
-  }
 
-  async function saveDept() {
-    const name = $("deptName").value.trim();
-    const code = $("deptCode").value.trim().toUpperCase();
-    if (!name || !code) return showMsg("deptMsg", "Name and code are required.", "err");
-    const years = collectYears();
-    if (years === null) return showMsg("deptMsg", "Fill all division fields.", "err");
-    const editId = $("deptEditId").value;
-    const res = await fetch(editId ? `${API}/departments/${editId}` : `${API}/departments`, {
-      method: editId ? "PATCH" : "POST",
-      headers: hdrs,
-      body: JSON.stringify({ name, code, years }),
-    });
-    const data = await res.json();
-    if (!res.ok) return showMsg("deptMsg", data.error, "err");
-    showMsg("deptMsg", `Department "${data.name}" ${editId ? "updated" : "created"}.`, "ok");
-    setTimeout(() => { closeModal("deptModal"); loadDepts(); }, 900);
-  }
+      function collectYears() {
+        const years = [];
+        for (const block of document.querySelectorAll(".year-block")) {
+          const year = +block.dataset.year,
+            divisions = [];
+          for (const row of block.querySelectorAll(".div-row")) {
+            const [nameIn, startIn, endIn] = row.querySelectorAll("input");
+            const name = nameIn.value.trim().toUpperCase(),
+              start = +startIn.value,
+              end = +endIn.value;
+            if (!name || !start || !end) return null;
+            divisions.push({ name, rollRange: { start, end } });
+          }
+          if (divisions.length) years.push({ year, divisions });
+        }
+        return years;
+      }
+// means ha code jo aahe toh apn form madhe jo data add kela aahe tyala json object madhe convert karto to send to backend and save in database
+      async function saveDept() {
+        const name = $("deptName").value.trim();
+        const code = $("deptCode").value.trim().toUpperCase();
+        if (!name || !code)
+          return showMsg("deptMsg", "Name and code are required.", "err");
+        const years = collectYears();
+        if (years === null)
+          return showMsg("deptMsg", "Fill all division fields.", "err");
+        const editId = $("deptEditId").value;
+        const res = await fetch(
+          editId ? `${API}/departments/${editId}` : `${API}/departments`,
+          {
+            method: editId ? "PATCH" : "POST",
+            headers: hdrs,
+            body: JSON.stringify({ name, code, years }),
+          },
+        );
+        const data = await res.json();
+        if (!res.ok) return showMsg("deptMsg", data.error, "err");
+        showMsg(
+          "deptMsg",
+          `Department "${data.name}" ${editId ? "updated" : "created"}.`,
+          "ok",
+        );
+        setTimeout(() => {
+          closeModal("deptModal");
+          loadDepts();
+        }, 900);
+      }
 
-  async function deleteDept(id) {
-    if (!confirm("Delete this department?")) return;
-    await fetch(`${API}/departments/${id}`, { method: "DELETE", headers: hdrs });
-    loadDepts();
-  }
+      async function deleteDept(id) {
+        if (!confirm("Delete this department?")) return;
+        await fetch(`${API}/departments/${id}`, {
+          method: "DELETE",
+          headers: hdrs,
+        });
+        loadDepts();
+      }
 
+      /* ── HODs ── */
 
-  /* ── HODs ── */
+      async function loadHods() {
+        const res = await fetch(`${API}/users?role=hod`, { headers: hdrs });
+        renderHods(await res.json());
+      }
+      // 1 or 2 ? basically ithe sarva hod cha data load karyacha function aahe toh API la request pathavto and response madhe je data yenar aahe toh renderHods function la pathavto display sathi
 
-  async function loadHods() {
-    const res = await fetch(`${API}/users?role=hod`, { headers: hdrs });
-    renderHods(await res.json());
-  }
-
-  function renderHods(hods) {
-    const tbody = $("hodBody");
-    if (!hods.length) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No HODs yet.</div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = hods.map(h => {
-      const deptId = h.departmentId?._id || h.departmentId;
-      const dept   = depts.find(d => d._id === deptId);
-      return `<tr>
+      function renderHods(hods) {
+        const tbody = $("hodBody");
+        if (!hods.length) {
+          tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No HODs yet.</div></td></tr>`;
+          return;
+        }
+        tbody.innerHTML = hods
+          .map((h) => {
+            const deptId = h.departmentId?._id || h.departmentId;
+            const dept = depts.find((d) => d._id === deptId);
+            return `<tr>
         <td><strong>${h.name}</strong></td>
         <td class="small-text">${h.email}</td>
         <td>${dept ? `<span class="pill pill-blue">${dept.name}</span>` : `<span class="pill pill-yellow">Unassigned</span>`}</td>
@@ -322,71 +465,116 @@
           <button class="btn-sm btn-danger" onclick="deleteHod('${h._id}')">Delete</button>
         </div></td>
       </tr>`;
-    }).join("");
-  }
+          })
+          .join("");
+      }
+      // basically ha renderDept sarkhaach aahe but hod sathi aahe toh hod cha data gheun toh table madhe display karato
 
-  function openHodModal() {
-    $("hodEditId").value = "";
-    $("hodModalTitle").textContent = "Add HOD";
-    ["hodName", "hodEmail", "hodPass"].forEach(id => $(id).value = "");
-    $("hodDept").value = "";
-    $("hodMsg").innerHTML = "";
-    $("hodPassLabel").textContent = "Password";
-    $("hodPass").placeholder = "Set a password to share";
-    openModal("hodModal");
-  }
+      function openHodModal() {
+        $("hodEditId").value = "";
+        $("hodModalTitle").textContent = "Add HOD";
+        ["hodName", "hodEmail", "hodPass"].forEach((id) => ($(id).value = ""));
+        $("hodDept").value = "";
+        $("hodMsg").innerHTML = "";
+        $("hodPassLabel").textContent = "Password";
+        $("hodPass").placeholder = "Set a password to share";
+        openModal("hodModal");
+      }
+// ha hod modal open karyasathi aahe, means jo form madhe hod cha details apn input karto toh ha pan department walya module sarkhaach aahe but hod sathi aahe, basically ha code modal madhe je fields aahet te clean karto navin add karnyasathi
 
-  function editHod(id, name, email, deptId) {
-    $("hodEditId").value = id;
-    $("hodModalTitle").textContent = "Edit HOD";
-    $("hodName").value  = name;
-    $("hodEmail").value = email;
-    $("hodPass").value  = "";
-    $("hodDept").value  = deptId;
-    $("hodMsg").innerHTML = "";
-    $("hodPassLabel").textContent = "New Password (leave blank to keep current)";
-    $("hodPass").placeholder = "Leave blank to keep unchanged";
-    openModal("hodModal");
-  }
+      function editHod(id, name, email, deptId) {
+        $("hodEditId").value = id;
+        $("hodModalTitle").textContent = "Edit HOD";
+        $("hodName").value = name;
+        $("hodEmail").value = email;
+        $("hodPass").value = "";
+        $("hodDept").value = deptId;
+        $("hodMsg").innerHTML = "";
+        $("hodPassLabel").textContent =
+          "New Password (leave blank to keep current)";
+        $("hodPass").placeholder = "Leave blank to keep unchanged";
+        openModal("hodModal");
+      }
 
-  async function saveHod() {
-    const name     = $("hodName").value.trim();
-    const email    = $("hodEmail").value.trim();
-    const password = $("hodPass").value;
-    const deptId   = $("hodDept").value;
-    const editId   = $("hodEditId").value;
+      async function saveHod() {
+        const name = $("hodName").value.trim();
+        const email = $("hodEmail").value.trim();
+        const password = $("hodPass").value;
+        const deptId = $("hodDept").value;
+        const editId = $("hodEditId").value;
 
-    if (!name || !email)              return showMsg("hodMsg", "Name and email are required.", "err");
-    if (!editId && !password)         return showMsg("hodMsg", "Password is required.", "err");
-    if (password && password.length < 6) return showMsg("hodMsg", "Password must be at least 6 characters.", "err");
-    if (!deptId)                      return showMsg("hodMsg", "Please select a department.", "err");
+        if (!name || !email)
+          return showMsg("hodMsg", "Name and email are required.", "err");
+        if (!editId && !password)
+          return showMsg("hodMsg", "Password is required.", "err");
+        if (password && password.length < 6)
+          return showMsg(
+            "hodMsg",
+            "Password must be at least 6 characters.",
+            "err",
+          );
+        if (!deptId)
+          return showMsg("hodMsg", "Please select a department.", "err");
 
-    if (editId) {
-      const body = { name, email, departmentId: deptId };
-      if (password) body.password = password;
-      const res  = await fetch(`${API}/users/${editId}`, { method: "PATCH", headers: hdrs, body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) return showMsg("hodMsg", data.error, "err");
-      await fetch(`${API}/departments/${deptId}`, { method: "PATCH", headers: hdrs, body: JSON.stringify({ hodId: editId }) });
-      showMsg("hodMsg", `HOD "${name}" updated.`, "ok");
-    } else {
-      const res  = await fetch(`${API}/users`, { method: "POST", headers: hdrs, body: JSON.stringify({ name, email, password, role: "hod", departmentId: deptId }) });
-      const data = await res.json();
-      if (!res.ok) return showMsg("hodMsg", data.error, "err");
-      await fetch(`${API}/departments/${deptId}`, { method: "PATCH", headers: hdrs, body: JSON.stringify({ hodId: data._id }) });
-      showMsg("hodMsg", `HOD account created for ${name}.`, "ok");
-    }
+        if (editId) {
+          const body = { name, email, departmentId: deptId };
+          if (password) body.password = password;
+          const res = await fetch(`${API}/users/${editId}`, {
+            method: "PATCH",
+            headers: hdrs,
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) return showMsg("hodMsg", data.error, "err");
+          await fetch(`${API}/departments/${deptId}`, {
+            method: "PATCH",
+            headers: hdrs,
+            body: JSON.stringify({ hodId: editId }),
+          });
+          showMsg("hodMsg", `HOD "${name}" updated.`, "ok");
+          //This code updates an existing user’s details using an API call. If the update is successful, it then updates the selected department by assigning that user as its HOD. It also handles errors by showing a message if the update fails.
+        } else {
+          const res = await fetch(`${API}/users`, {
+            method: "POST",
+            headers: hdrs,
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              role: "hod",
+              departmentId: deptId,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) return showMsg("hodMsg", data.error, "err");
+          await fetch(`${API}/departments/${deptId}`, {
+            method: "PATCH",
+            headers: hdrs,
+            body: JSON.stringify({ hodId: data._id }),
+          }); // i think ha duplicate ahe warti same code aahe 
+          showMsg("hodMsg", `HOD account created for ${name}.`, "ok");
+        }
 
-    setTimeout(() => { closeModal("hodModal"); loadDepts(); loadHods(); }, 900);
-  }
+        setTimeout(() => {
+          closeModal("hodModal");
+          loadDepts();
+          loadHods();
+        }, 900);
+      }
 
-  async function deleteHod(id) {
-    if (!confirm("Delete this HOD account?")) return;
-    await fetch(`${API}/users/${id}`, { method: "DELETE", headers: hdrs });
-    loadHods();
-  }
+      async function deleteHod(id) {
+        if (!confirm("Delete this HOD account?")) return;
+        await fetch(`${API}/users/${id}`, { method: "DELETE", headers: hdrs });
+        loadHods();
+      }
 
-  loadDepts();
-</script>
-</body>
+      loadDepts();
+    </script>
+  </body>
 </html>
+
+
+
+patch - update 
+post - create
+delete - delete 
