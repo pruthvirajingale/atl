@@ -444,7 +444,7 @@
         const res = await fetch(`${API}/users?role=hod`, { headers: hdrs });
         renderHods(await res.json());
       }
-      // 1 or 2 ? basically ithe sarva hod cha data load karyacha function aahe toh API la request pathavto and response madhe je data yenar aahe toh renderHods function la pathavto display sathi
+      // basically ithe sarva hod cha data load karyacha function aahe toh API la request pathavto and response madhe je data yenar aahe toh renderHods function la pathavto display sathi
 
       function renderHods(hods) {
         const tbody = $("hodBody");
@@ -551,7 +551,7 @@
             method: "PATCH",
             headers: hdrs,
             body: JSON.stringify({ hodId: data._id }),
-          }); // i think ha duplicate ahe warti same code aahe 
+          }); // i think ha duplicate ahe warti same code aahe
           showMsg("hodMsg", `HOD account created for ${name}.`, "ok");
         }
 
@@ -574,7 +574,3 @@
 </html>
 
 
-
-patch - update 
-post - create
-delete - delete 

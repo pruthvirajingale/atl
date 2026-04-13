@@ -264,13 +264,21 @@
   });
   return `${BASE_URL}/checkin?${params.toString()}`;
 }
-    function generateQR() {
-      if (!selectedSubj) return;
-      clearInterval(refreshTimer);
-      document.getElementById('qrCard').classList.add('visible');
-      const url = buildCheckinURL(selectedSubj, lectureType);
-      renderQR(url); updateLabels(url); startCountdown();
-    }
+
+function generateQR() {
+  if (!selectedSubj) return;
+  clearInterval(refreshTimer);
+    // reset any previous expiry
+
+  document.getElementById('qrCard').classList.add('visible');
+  const url = buildCheckinURL(selectedSubj, lectureType);
+  renderQR(url);
+  updateLabels(url);
+  startCountdown();
+
+  // ← hide QR after 10 minutes
+
+}
 
     function renderQR(url) {
       const container = document.getElementById('qrcode');
@@ -294,6 +302,7 @@
       document.getElementById('qrHint').textContent = url;
     }
 
+
    function startCountdown() {
   countDown = REFRESH_SEC;
   const url = buildCheckinURL(selectedSubj, lectureType);
@@ -309,6 +318,7 @@
     }
   }, 1000);
 }
+
 
     function tickTimer() {
       document.getElementById('timerLabel').textContent = `${countDown}s`;
